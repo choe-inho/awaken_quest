@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 200">
+  <!-- 그라데이션 정의 -->
+  <defs>
+    <!-- 메인 텍스트 그라데이션 -->
+    <linearGradient id="textGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#64B5F6" />
+      <stop offset="50%" stop-color="#3A7FFF" />
+      <stop offset="100%" stop-color="#9B4DFF" />
+    </linearGradient>
+    
+    <!-- 글로우 효과 그라데이션 -->
+    <linearGradient id="glowGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#64B5F6" stop-opacity="0.7" />
+      <stop offset="100%" stop-color="#9B4DFF" stop-opacity="0.7" />
+    </linearGradient>
+    
+    <!-- 텍스트 쉐도우 필터 -->
+    <filter id="glow" x="-10%" y="-10%" width="120%" height="120%">
+      <feGaussianBlur stdDeviation="8" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+    
+    <!-- 글리치 필터 -->
+    <filter id="glitch" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="1" result="noise" />
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="5" xChannelSelector="R" yChannelSelector="G" />
+    </filter>
+    
+    <!-- 에너지 아우라 필터 -->
+    <filter id="energyAura" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="20" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+  
+  <!-- 배경 아우라 효과 -->
+  <g filter="url(#energyAura)">
+    <text x="400" y="120" font-family="Arial, sans-serif" font-size="90" font-weight="900" text-anchor="middle" fill="url(#glowGradient)" opacity="0.4">AWAKEN QUEST</text>
+  </g>
+  
+  <!-- 글리치 효과 레이어 -->
+  <g filter="url(#glitch)">
+    <text x="402" y="122" font-family="Arial, sans-serif" font-size="90" font-weight="900" text-anchor="middle" fill="#FF4D4D" opacity="0.4">AWAKEN QUEST</text>
+    <text x="398" y="118" font-family="Arial, sans-serif" font-size="90" font-weight="900" text-anchor="middle" fill="#64B5F6" opacity="0.4">AWAKEN QUEST</text>
+  </g>
+  
+  <!-- 메인 텍스트 -->
+  <g filter="url(#glow)">
+    <text x="400" y="120" font-family="Arial, sans-serif" font-size="90" font-weight="900" text-anchor="middle" fill="url(#textGradient)">AWAKEN QUEST</text>
+  </g>
+  
+  <!-- 하이라이트 효과 -->
+  <text x="400" y="120" font-family="Arial, sans-serif" font-size="90" font-weight="900" text-anchor="middle" fill="none" stroke="white" stroke-width="1" opacity="0.7">AWAKEN QUEST</text>
+  
+  <!-- 룬 장식 요소 -->
+  <g opacity="0.7">
+    <!-- 왼쪽 룬 마크 -->
+    <path d="M120,120 L140,100 L160,120 L140,140 Z" fill="none" stroke="#64B5F6" stroke-width="2" />
+    <circle cx="140" cy="120" r="5" fill="#64B5F6" />
+    
+    <!-- 오른쪽 룬 마크 -->
+    <path d="M640,120 L660,100 L680,120 L660,140 Z" fill="none" stroke="#9B4DFF" stroke-width="2" />
+    <circle cx="660" cy="120" r="5" fill="#9B4DFF" />
+  </g>
+  
+  <!-- 추가 장식 - 에너지 라인 -->
+  <path d="M180,120 L250,120" stroke="url(#textGradient)" stroke-width="3" stroke-linecap="round" opacity="0.7" />
+  <path d="M550,120 L620,120" stroke="url(#textGradient)" stroke-width="3" stroke-linecap="round" opacity="0.7" />
+  
+  <!-- 작은 태그라인 -->
+  <text x="400" y="170" font-family="Arial, sans-serif" font-size="20" font-weight="500" text-anchor="middle" fill="white" opacity="0.8">차원을 넘어선 모험</text>
+</svg>

@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "949208682602",
+    "project_id": "awaken-quest",
+    "storage_bucket": "awaken-quest.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:949208682602:android:e5ab7de13b976165173a13",
+        "android_client_info": {
+          "package_name": "com.iconoding.awaken_quest"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "949208682602-5vrrv4skbla755k30cum7gk1k0l8dv9i.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.iconoding.awaken_quest",
+            "certificate_hash": "dea2cfd57d942c5463e44a4443fea84a81946e36"
+          }
+        },
+        {
+          "client_id": "949208682602-3kahjfjvtp2mbqvgtq6itli70aqbsr1o.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD0hVGmgnBBNvtbUC1tHD-9EjrY4tmzF0c"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "949208682602-3kahjfjvtp2mbqvgtq6itli70aqbsr1o.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "949208682602-ikq3p20q0l4oko5h4u7vrvubjrncrhkh.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.iconoding.awakenQuest"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
