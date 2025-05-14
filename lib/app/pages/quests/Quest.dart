@@ -9,8 +9,6 @@ class Quest extends GetView<QuestController> {
 
   @override
   Widget build(BuildContext context) {
-    final userController = Get.find<UserController>();
-
     return Obx(() =>
     controller.loading.value
         ? const Loading()

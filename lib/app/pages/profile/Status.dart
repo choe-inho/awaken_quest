@@ -261,9 +261,9 @@ class _StatusState extends State<Status> with SingleTickerProviderStateMixin {
                 value: user.job,
               ),
               _buildInfoItem(
-                icon: BootstrapIcons.award,
-                label: "칭호",
-                value: "회복의 빛",
+                icon: BootstrapIcons.emoji_astonished,
+                label: "피로도",
+                value: "${DateTime.now().difference(userController.firstLogin ?? DateTime.now()).inMinutes}%",
               ),
             ],
           ),
@@ -274,13 +274,13 @@ class _StatusState extends State<Status> with SingleTickerProviderStateMixin {
           Row(
             children: [
               Icon(
-                BootstrapIcons.emoji_frown_fill,
+                BootstrapIcons.award_fill,
                 color: Colors.amber.withAlpha(200),
                 size: 16,
               ),
               const SizedBox(width: 8),
               Text(
-                "피로도",
+                "칭호",
                 style: TextStyle(
                   color: Colors.white.withAlpha(200),
                   fontSize: 14,
@@ -288,7 +288,7 @@ class _StatusState extends State<Status> with SingleTickerProviderStateMixin {
               ),
               const SizedBox(width: 8),
               Text(
-                "${DateTime.now().difference(userController.firstLogin ?? DateTime.now()).inMinutes}%",
+                "",
                 style: TextStyle(
                   color: Colors.amber.withAlpha(220),
                   fontSize: 14,
@@ -308,31 +308,34 @@ class _StatusState extends State<Status> with SingleTickerProviderStateMixin {
     required String label,
     required String value,
   }) {
-    return Column(
-      children: [
-        Icon(
-          icon,
-          color: Colors.white.withAlpha(220),
-          size: 20,
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: TextStyle(
-            color: Colors.white.withAlpha(180),
-            fontSize: 12,
+    return SizedBox(
+      width: 60,
+      child: Column(
+        children: [
+          Icon(
+            icon,
+            color: Colors.white.withAlpha(220),
+            size: 20,
           ),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          value,
-          style: TextStyle(
-            color: Colors.white.withAlpha(240),
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              color: Colors.white.withAlpha(180),
+              fontSize: 12,
+            ),
           ),
-        ),
-      ],
+          const SizedBox(height: 2),
+          Text(
+            value,
+            style: TextStyle(
+              color: Colors.white.withAlpha(240),
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
     );
   }
 

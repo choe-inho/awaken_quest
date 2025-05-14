@@ -2,6 +2,8 @@
 import 'package:awaken_quest/utils/manager/Import_Manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../model/User_Model.dart';
+import '../../utils/handler/Login_Streak_Handler.dart';
+import '../../utils/manager/Title_Integration.dart';
 
 class UserController extends GetxController{
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -34,6 +36,9 @@ class UserController extends GetxController{
           progress.value += 50;
           firebaseConnected.value = true;
           await setFirstLogin();
+
+          // 칭호 시스템과 통합
+          await TitleIntegration().integrateWithUserProfile(this);
 
           if(Get.arguments == null){
             Get.offAllNamed('/home');
@@ -75,6 +80,17 @@ class UserController extends GetxController{
        firstLogin = now;
       }
     }
+  }
+
+  final _streakHandler = LoginStreakHandler();
+
+  // 사용자 로그인 후 또는 앱 시작 시
+  Future<void> onUserLogin() async {
+    // 로그인 스트릭 계산
+    final currentStreak = await _streakHandler.calculateLoginStreak();
+
+    // 칭호 시스템과 통합
+    await TitleIntegration().integrateWithLoginStreak(currentStreak);
   }
 
 

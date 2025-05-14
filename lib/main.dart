@@ -1,5 +1,6 @@
 import 'package:awaken_quest/utils/App_Theme.dart';
 import 'package:awaken_quest/utils/manager/Import_Manager.dart';
+import 'package:awaken_quest/utils/manager/Title_Integration.dart';
 import 'package:hive_flutter/adapters.dart';
 import 'app/routes/App_Pages.dart';
 import 'app/routes/App_Routes.dart';
@@ -15,9 +16,17 @@ void main() async{
 
   await Hive.initFlutter();
 
-  Hive.registerAdapter(MissionAdapter());
+  // 모델 어댑터 등록
+  Hive.registerAdapter(MissionAdapter()); //미션 어뎁터 등록
+  registerTitleAdapters(); // 칭호 어댑터 등록
 
-  await Hive.openBox<Mission>('customMissionBox');
+  // 각 박스 오픈
+  await Hive.openBox('customMissionBox');
+  await Hive.openBox('titles_box');
+  await Hive.openBox('user_titles_box');
+
+  // 칭호 시스템 초기화
+  await initializeTitleSystem();
 
   // 한국어 로케일 데이터 초기화 (여기서 한 번만 실행)
   await initializeDateFormatting('ko_KR');

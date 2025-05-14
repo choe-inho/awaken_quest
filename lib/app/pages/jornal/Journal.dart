@@ -1,106 +1,23 @@
-import 'package:awaken_quest/utils/manager/Import_Manager.dart';
-import 'package:intl/intl.dart';
-import '../../../utils/diagonal_pattern_painter.dart';
-import 'dart:math' as math;
-
-import '../../widgets/Hunter_Status_Frame.dart';
-
-// 저널 컨트롤러
-class JournalController extends GetxController {
-  final _firestore = FirebaseFirestore.instance;
-  final _auth = FirebaseAuth.instance;
-  // 선택된 날짜
-  final Rx<DateTime> selectedDate = DateTime.now().obs;
-
-  // 날짜별 미션 기록 데이터
-  final RxMap<String, List<QuestModel>> quest = <String, List<QuestModel>>{}.obs;
-
-  // 필터 상태 (전체, 완료, 미완료)
-  final RxString filter = 'all'.obs;
-
-  // 로딩 상태
-  final RxBool isLoading = false.obs;
-
-  @override
-  void onInit() {
-    super.onInit();
-    // 초기 데이터 로드
-    loadQuestModels();
-  }
-
-  // 날짜 변경 메서드
-  void changeDate(DateTime newDate) {
-    selectedDate.value = newDate;
-  }
-
-  // 날짜를 문자열로 변환 (키 용도)
-  String dateToString(DateTime date) {
-    return DateFormat('yyyyMMdd').format(date);
-  }
-
-  // 필터 변경 메서드
-  void changeFilter(String newFilter) {
-    filter.value = newFilter;
-  }
-
-  // 미션 기록 로드
-  void loadQuestModels() async{
-    isLoading.value = true;
-    
-    // 실제로는 Firebase 또는 로컬 DB에서 로드
-    await  _generateDummyData();
-
-    isLoading.value = false;
-  }
-
-  // 더미 데이터 생성 메서드
-  Future<void> _generateDummyData()  async{
-    final Map<String, List<QuestModel>> dummyData = {};
-    final date = dateToString(selectedDate.value);
-    
-    //해당 날짜 받아오기
-    final data = await _firestore.collection('users').doc(_auth.currentUser!.uid).collection('missions').doc(date).get(); //list 형일건데
-    
-    
-    quest.value = dummyData;
-  }
-
-
-
-  // 특정 날짜의 필터링된 미션 목록 반환
-  List<QuestModel> getFilteredMissions(String dateStr) {
-    if (!quest.containsKey(dateStr)) {
-      return [];
-    }
-
-    final missions = quest[dateStr]!;
-
-    switch (filter.value) {
-      case 'completed':
-        return missions.where((mission) => mission.isClear != null).toList();
-      case 'incomplete':
-        return missions.where((mission) => mission.isClear == null).toList();
-      case 'all':
-      default:
-        return missions;
-    }
-  }
-
-}
 
 // 저널 페이지
+import 'package:intl/intl.dart';
+
+import '../../../utils/Diagonal_Pattern_Painter.dart';
+import '../../../utils/manager/Import_Manager.dart';
+import '../../controllers/Journal_Controller.dart';
+import '../../widgets/Hunter_Status_Frame.dart';
+
 class Journal extends StatelessWidget {
   const Journal({super.key});
 
   @override
   Widget build(BuildContext context) {
     // GetX 컨트롤러 초기화
-    final journalController = Get.put(JournalController());
+    final journalController = Get.find<JournalController>();
 
     return SafeArea(
       child: Stack(
         children: [
-
           // 배경 효과
           Positioned.fill(
             child: _buildBackgroundEffects(),
@@ -303,7 +220,18 @@ class Journal extends StatelessWidget {
   Widget _buildMissionList(JournalController controller) {
     return Obx(() {
       final dateStr = controller.dateToString(controller.selectedDate.value);
-      final missions = controller.getFilteredMissions(dateStr);
+      final missionTypes = ['main', 'sub', 'custom'];
+
+      // 모든 유형의 미션을 가져와서 병합
+      final allMissions = <String, List<QuestModel>>{};
+      for (final type in missionTypes) {
+        if (controller.quest.containsKey(type)) {
+          allMissions[type] = controller.getFilteredMissions(dateStr, type);
+        }
+      }
+
+      // 미션이 하나도 없는지 확인
+      final bool noMissions = allMissions.values.every((list) => list.isEmpty);
 
       if (controller.isLoading.value) {
         return const Center(
@@ -313,7 +241,7 @@ class Journal extends StatelessWidget {
         );
       }
 
-      if (missions.isEmpty) {
+      if (noMissions) {
         return _buildEmptyState();
       }
 
@@ -330,10 +258,42 @@ class Journal extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(20),
           child: ListView.builder(
-            itemCount: missions.length,
-            itemBuilder: (context, index) {
-              final mission = missions[index];
-              return _buildMissionItem(mission, controller);
+            itemCount: missionTypes.length, // 미션 유형별로 섹션 생성
+            itemBuilder: (context, typeIndex) {
+              final type = missionTypes[typeIndex];
+              final missions = allMissions[type] ?? [];
+
+              if (missions.isEmpty) {
+                return const SizedBox.shrink(); // 해당 유형의 미션이 없으면 표시하지 않음
+              }
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 미션 유형 헤더
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8, top: 16),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: _getMissionTypeColor(type).withAlpha(120),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        _getMissionTypeText(type),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // 해당 유형의 미션 리스트
+                  ...missions.map((mission) => _buildMissionItem(type, mission)),
+                ],
+              );
             },
           ),
         ),
@@ -385,10 +345,10 @@ class Journal extends StatelessWidget {
   }
 
   // 미션 아이템 위젯
-  Widget _buildMissionItem(String type, String key,QuestModel mission, JournalController controller) {
+  Widget _buildMissionItem(String type, QuestModel mission) {
     // 미션 유형에 따른 색상 설정
     final Color missionColor = _getMissionTypeColor(type);
-    final dateStr = key;
+    final bool isCompleted = mission.isClear != null;
 
     return FadeIn(
       child: Padding(
@@ -402,12 +362,12 @@ class Journal extends StatelessWidget {
                 color: Colors.black.withAlpha(100),
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                  color: missionColor.withAlpha(mission.isClear != null ? 100 : 160),
+                  color: missionColor.withAlpha(isCompleted ? 100 : 160),
                   width: 1.5,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: missionColor.withAlpha(mission.isClear != null ? 40 : 80),
+                    color: missionColor.withAlpha(isCompleted ? 40 : 80),
                     blurRadius: 5,
                     spreadRadius: 0,
                   ),
@@ -423,17 +383,17 @@ class Journal extends StatelessWidget {
                     margin: const EdgeInsets.only(right: 12, top: 2),
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: mission.isClear != null
+                      color: isCompleted
                           ? const Color(0xFF00FF00).withAlpha(40)
                           : Colors.transparent,
                       border: Border.all(
-                        color: mission.isClear != null
+                        color: isCompleted
                             ? const Color(0xFF00FF00).withAlpha(160)
                             : missionColor.withAlpha(160),
                         width: 1.5,
                       ),
                     ),
-                    child: mission.isClear != null
+                    child: isCompleted
                         ? Icon(
                       BootstrapIcons.check,
                       size: 14,
@@ -447,129 +407,66 @@ class Journal extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // 미션 유형 태그 및 제목
-                        Row(
-                          children: [
-                            // 미션 유형 태그
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                              margin: const EdgeInsets.only(right: 8),
-                              decoration: BoxDecoration(
-                                color: missionColor.withAlpha(100),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Text(
-                                _getMissionTypeText(type),
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-
-                            // 미션 제목
-                            Expanded(
-                              child: Text(
-                                mission.quest,
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  decoration: mission.isClear != null
-                                      ? TextDecoration.lineThrough
-                                      : null,
-                                  decorationColor: Colors.white.withAlpha(150),
-                                ),
-                              ),
-                            ),
-                          ],
+                        // 미션 제목
+                        Text(
+                          mission.quest,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            decoration: isCompleted
+                                ? TextDecoration.lineThrough
+                                : null,
+                            decorationColor: Colors.white.withAlpha(150),
+                          ),
                         ),
 
                         const SizedBox(height: 8),
 
                         // 미션 진행도
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            // 진행도 텍스트
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  '진행: ${mission.amount}',
-                                  style: TextStyle(
-                                    color: Colors.white.withAlpha(180),
-                                    fontSize: 12,
-                                  ),
-                                ),
-                                Row(
-                                  children: [
-                                    Icon(
-                                      BootstrapIcons.coin,
-                                      color: Colors.amber.withAlpha(200),
-                                      size: 12,
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      '${mission.reward}',
-                                      style: TextStyle(
-                                        color: Colors.amber.withAlpha(220),
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
+                            Text(
+                              '목표: ${mission.amount} ${mission.unit}',
+                              style: TextStyle(
+                                color: Colors.white.withAlpha(180),
+                                fontSize: 12,
+                              ),
                             ),
-
-                            const SizedBox(height: 4),
-
-                            // 진행도 바
-                            Stack(
+                            Row(
                               children: [
-                                // 배경
-                                Container(
-                                  height: 6,
-                                  width: double.infinity,
-                                  decoration: BoxDecoration(
-                                    color: Colors.black.withAlpha(100),
-                                    borderRadius: BorderRadius.circular(3),
-                                  ),
+                                Icon(
+                                  BootstrapIcons.coin,
+                                  color: Colors.amber.withAlpha(200),
+                                  size: 12,
                                 ),
-
-                                // 진행 바
-                                FractionallySizedBox(
-                                  widthFactor: mission.targetAmount > 0
-                                      ? (mission.completedAmount / mission.targetAmount).clamp(0.0, 1.0)
-                                      : 0.0,
-                                  child: Container(
-                                    height: 6,
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(3),
-                                      gradient: LinearGradient(
-                                        colors: [
-                                          missionColor,
-                                          missionColor.withAlpha(150),
-                                        ],
-                                        begin: Alignment.centerLeft,
-                                        end: Alignment.centerRight,
-                                      ),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: missionColor.withAlpha(100),
-                                          blurRadius: 3,
-                                          spreadRadius: 0,
-                                        ),
-                                      ],
-                                    ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '${mission.exp}',
+                                  style: TextStyle(
+                                    color: Colors.amber.withAlpha(220),
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
                                   ),
                                 ),
                               ],
                             ),
                           ],
                         ),
+
+                        const SizedBox(height: 6),
+
+                        // 날짜 정보 (완료된 경우에만)
+                        if (isCompleted)
+                          Text(
+                            '완료: ${DateFormat('MM/dd HH:mm').format(mission.isClear!)}',
+                            style: TextStyle(
+                              color: Colors.white.withAlpha(140),
+                              fontSize: 11,
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
                       ],
                     ),
                   ),
@@ -578,7 +475,7 @@ class Journal extends StatelessWidget {
             ),
 
             // 완료 표시 (완료된 미션에만)
-            if (mission.isCleared)
+            if (isCompleted)
               Positioned(
                 top: 0,
                 right: 0,
@@ -625,13 +522,13 @@ class Journal extends StatelessWidget {
   String _getMissionTypeText(String type) {
     switch (type) {
       case 'main':
-        return '일일';
+        return '일일 미션';
       case 'sub':
-        return '특별';
+        return '특별 미션';
       case 'custom':
-        return '개인';
+        return '개인 미션';
       default:
-        return '기타';
+        return '기타 미션';
     }
   }
 }

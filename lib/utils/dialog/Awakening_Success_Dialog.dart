@@ -152,24 +152,6 @@ class _AwakeningSuccessDialogState extends State<AwakeningSuccessDialog>
               ),
             ),
 
-            // 상단 효과
-            Positioned(
-              top: -30,
-              left: 0,
-              right: 0,
-              child: Center(
-                child: FadeIn(
-                  delay: const Duration(milliseconds: 300),
-                  child: Lottie.network(
-                    'https://assets2.lottiefiles.com/packages/lf20_obhph3sh.json',
-                    height: 60,
-                    width: 120,
-                    fit: BoxFit.fitWidth,
-                  ),
-                ),
-              ),
-            ),
-
             // 각성 에너지 빔 효과
             Positioned(
               top: -100,

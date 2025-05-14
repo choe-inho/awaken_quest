@@ -1,4 +1,5 @@
 import 'package:awaken_quest/app/bindings/Home_Binding.dart';
+import 'package:awaken_quest/app/bindings/Journal_Binding.dart';
 import 'package:awaken_quest/app/bindings/Quest_Binding.dart';
 import 'package:awaken_quest/app/bindings/Register_Binding.dart';
 import 'package:awaken_quest/app/controllers/Awakening_Animation_Controller.dart';
@@ -50,7 +51,8 @@ class AppPages {
       transition: Transition.fade,
       bindings: [
         HomeBinding(),
-        QuestBinding()
+        QuestBinding(),
+        JournalBinding()
       ]
     ),
     GetPage(

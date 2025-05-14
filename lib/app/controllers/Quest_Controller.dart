@@ -2,6 +2,8 @@
 import 'package:awaken_quest/utils/manager/Import_Manager.dart';
 import 'package:intl/intl.dart';
 
+import '../../utils/manager/Title_Integration.dart';
+
 class QuestController extends GetxController {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   RxString today = ''.obs;
@@ -167,6 +169,15 @@ class QuestController extends GetxController {
         } else if (type == "custom") {
           todayCustomMissions = updatedList;
         }
+
+        // 미션 완료 후 칭호 체크
+        final userController = Get.find();
+        await TitleIntegration().integrateWithMissionComplete(
+            this,
+            type,
+            userController.user.value?.job ?? '전사'
+        );
+
       } else {
         print("해당 id의 미션을 찾을 수 없습니다.");
       }
