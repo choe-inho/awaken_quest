@@ -13,7 +13,6 @@ class TitleIntegration {
   static final TitleIntegration _instance = TitleIntegration._internal();
   factory TitleIntegration() => _instance;
   TitleIntegration._internal();
-
   final TitleHandler _titleHandler = TitleHandler();
 
   // 사용자 프로필과 통합
@@ -56,7 +55,7 @@ class TitleIntegration {
       await _titleHandler.checkAndGrantTitles('job_mission', jobMissionCount, jobType: jobType);
 
       // 시간 기반 미션 체크 (새벽 미션, 밤 미션)
-      final hour = DateTime.now().hour;
+      final hour = DateTime.now().toLocal().hour;
       if (hour < 5) {
         // 새벽 5시 이전 (새벽 미션)
         await _titleHandler.checkAndGrantTitles('time_mission', hour);
@@ -112,17 +111,17 @@ class TitleIntegration {
 
     // 메인 미션 중 완료된 것
     count += questController.todayMainMissions
-        .where((mission) => mission.value.isClear != null)
+        .where((mission) => mission.isClear != null)
         .length;
 
     // 서브 미션 중 완료된 것
     count += questController.todaySubMissions
-        .where((mission) => mission.value.isClear != null)
+        .where((mission) => mission.isClear != null)
         .length;
 
     // 커스텀 미션 중 완료된 것
     count += questController.todayCustomMissions
-        .where((mission) => mission.value.isClear != null)
+        .where((mission) => mission.isClear != null)
         .length;
 
     return count;
@@ -141,11 +140,11 @@ class TitleIntegration {
   bool _checkAllDailyMissionsCompleted(QuestController questController) {
     // 메인 미션 중 완료되지 않은 것이 있는지 체크
     final anyMainIncomplete = questController.todayMainMissions
-        .any((mission) => mission.value.isClear == null);
+        .any((mission) => mission.isClear == null);
 
     // 서브 미션 중 완료되지 않은 것이 있는지 체크
     final anySubIncomplete = questController.todaySubMissions
-        .any((mission) => mission.value.isClear == null);
+        .any((mission) => mission.isClear == null);
 
     // 모든 미션이 완료되었으면 true 반환
     return !anyMainIncomplete && !anySubIncomplete &&
@@ -159,15 +158,30 @@ Future<void> initializeTitleSystem() async {
   // Hive 어댑터 등록 (미리 등록되지 않은 경우)
   // Hive.registerAdapter(TitleModelAdapter());
 
-  // Hive 박스 열기
-  await Hive.openBox<TitleModel>('titles_box');
-  await Hive.openBox('user_titles_box');
+  try {
+    // Hive 박스 열기 전에 이미 열려있는지 확인
+    if (!Hive.isBoxOpen('titles_box')) {
+      await Hive.openBox<TitleModel>('titles_box');
+    }
 
-  // 칭호 핸들러 초기화
-  await TitleHandler().loadAllTitles();
+    if (!Hive.isBoxOpen('user_titles_box')) {
+      await Hive.openBox('user_titles_box');
+    }
+
+    // 칭호 핸들러 초기화
+    await TitleHandler().loadAllTitles();
+  } catch (e) {
+    print('칭호 시스템 초기화 오류: $e');
+  }
 }
 
 // 칭호 시스템 Hive 등록 (main.dart에서 호출)
 void registerTitleAdapters() {
-  Hive.registerAdapter(TitleModelAdapter());
+  // 이미 등록되어 있는지 확인하는 로직 추가
+  try {
+    Hive.registerAdapter(TitleModelAdapter());
+  } catch (e) {
+    // 이미 등록된 경우 오류 무시
+    print('TitleModelAdapter 등록 오류(무시됨): $e');
+  }
 }

@@ -185,10 +185,7 @@ class JobResult extends GetView<UserController> {
                           child: EnhancedStatusButton(
                             label: '확인',
                             color: jobColor,
-                            onPressed: () {
-                              // 버튼 누를 때 플래시 효과
-                              Get.offAllNamed('/home');
-                            },
+                            onPressed: ()=>  Get.offAllNamed('/home')
                           ),
                         ),
                       ),
@@ -198,7 +195,7 @@ class JobResult extends GetView<UserController> {
 
                 // 오버레이 빛 효과
                 Positioned.fill(
-                  child: LightOverlayEffect(color: jobColor),
+                  child: IgnorePointer(child: LightOverlayEffect(color: jobColor)),
                 ),
               ],
             ),
@@ -993,12 +990,12 @@ class _EnhancedStatusButtonState extends State<EnhancedStatusButton> with Single
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: widget.onPressed,
-      child: AnimatedBuilder(
-        animation: _glowAnimation,
-        builder: (context, child) {
-          return Container(
+    return AnimatedBuilder(
+      animation: _glowAnimation,
+      builder: (context, child) {
+        return InkWell(
+           onTap: widget.onPressed,
+          child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
             decoration: BoxDecoration(
               color: Colors.black.withValues(alpha: 0.5),
@@ -1024,9 +1021,9 @@ class _EnhancedStatusButtonState extends State<EnhancedStatusButton> with Single
                 letterSpacing: 1.0,
               ),
             ),
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
 }

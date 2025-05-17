@@ -1,14 +1,10 @@
 // lib/app/pages/profile/Titles_Page.dart
 import 'dart:ui';
-
-import 'package:awaken_quest/app/controllers/User_Controller.dart';
 import 'package:awaken_quest/app/widgets/Hunter_Status_Frame.dart';
 import 'package:awaken_quest/model/Title_Model.dart';
 import 'package:awaken_quest/utils/handler/Title_Handler.dart';
 import 'package:awaken_quest/utils/manager/Import_Manager.dart';
 import 'dart:math' as math;
-
-import '../../../utils/dialog/Title_Acheivemet_Dialog.dart';
 import '../../widgets/Title_Card_Widget.dart';
 
 class TitlesPage extends StatefulWidget {
@@ -52,17 +48,6 @@ class _TitlesPageState extends State<TitlesPage> with SingleTickerProviderStateM
 
     // 데이터 로드
     _loadData();
-
-    // 칭호 획득 이벤트 리스너
-    _titleAcquiredSubscription = _titleHandler.onTitleAcquired.listen((title) {
-      // 칭호 획득 다이얼로그 표시
-      showTitleAchievementDialog(context, title);
-
-      // 상태 업데이트
-      setState(() {
-        _updateFilteredTitles();
-      });
-    });
   }
 
   // 데이터 로드
@@ -79,7 +64,7 @@ class _TitlesPageState extends State<TitlesPage> with SingleTickerProviderStateM
       _selectedTitleId = _titleHandler.currentTitleId;
 
       // 필터링된 칭호 초기화
-      _updateFilteredTitles();
+      updateFilteredTitles();
     } catch (e) {
       print('칭호 데이터 로드 오류: $e');
     } finally {
@@ -90,7 +75,7 @@ class _TitlesPageState extends State<TitlesPage> with SingleTickerProviderStateM
   }
 
   // 필터링된 칭호 업데이트
-  void _updateFilteredTitles() {
+  void updateFilteredTitles() {
     switch (_selectedTabIndex) {
       case 0: // 모든 칭호
         _filteredTitles = _titleHandler.getAllTitles();
@@ -116,6 +101,7 @@ class _TitlesPageState extends State<TitlesPage> with SingleTickerProviderStateM
       default:
         _filteredTitles = _titleHandler.getAllTitles();
     }
+    setState(() {});
   }
 
   @override
@@ -284,7 +270,7 @@ class _TitlesPageState extends State<TitlesPage> with SingleTickerProviderStateM
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: HunterStatusFrame(
         width: Get.width - 32,
-        height: 120,
+        height: 140,
         primaryColor: currentTitle?.color ?? Colors.cyanAccent,
         secondaryColor: currentTitle?.color.withValues(alpha: 0.7) ??
             const Color(0xFF00A3FF),
@@ -371,7 +357,7 @@ class _TitlesPageState extends State<TitlesPage> with SingleTickerProviderStateM
             onTap: () {
               setState(() {
                 _selectedTabIndex = index;
-                _updateFilteredTitles();
+                updateFilteredTitles();
               });
             },
             child: AnimatedContainer(
@@ -445,29 +431,29 @@ class _TitlesPageState extends State<TitlesPage> with SingleTickerProviderStateM
       );
     }
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: ListView.builder(
-        itemCount: _filteredTitles.length,
-        itemBuilder: (context, index) {
-          final title = _filteredTitles[index];
-          final isSelected = title.id == _selectedTitleId;
+    return ListView.builder(
+      itemCount: _filteredTitles.length,
+      itemBuilder: (context, index) {
+        final title = _filteredTitles[index];
+        final isSelected = title.id == _selectedTitleId;
 
-          // 현재 진행도 값 계산 (진행상황 표시용)
-          int? currentValue;
-          if (!title.isAcquired) {
-            if (title.conditionType.startsWith('level_up')) {
-              currentValue = _userController.user.value?.level ?? 0;
-            } else if (title.conditionType.startsWith('mission_complete')) {
-              // 미션 완료 수는 별도 추적이 필요함
-              currentValue = 0; // 예시용 임시값
-            } else if (title.conditionType.startsWith('streak')) {
-              // 연속 접속 일수는 별도 추적이 필요함
-              currentValue = 0; // 예시용 임시값
-            }
+        // 현재 진행도 값 계산 (진행상황 표시용)
+        int? currentValue;
+        if (!title.isAcquired) {
+          if (title.conditionType.startsWith('level_up')) {
+            currentValue = _userController.user.value?.level ?? 0;
+          } else if (title.conditionType.startsWith('mission_complete')) {
+            // 미션 완료 수는 별도 추적이 필요함
+            currentValue = 0; // 예시용 임시값
+          } else if (title.conditionType.startsWith('streak')) {
+            // 연속 접속 일수는 별도 추적이 필요함
+            currentValue = 0; // 예시용 임시값
           }
+        }
 
-          return TitleCard(
+        return Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16),
+          child: TitleCard(
             title: title,
             isSelected: isSelected,
             currentValue: currentValue,
@@ -477,9 +463,9 @@ class _TitlesPageState extends State<TitlesPage> with SingleTickerProviderStateM
                 _selectTitle(title.id);
               }
             },
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
 

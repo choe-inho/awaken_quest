@@ -134,7 +134,7 @@ class Quest extends GetView<QuestController> {
   // 퀘스트 섹션 위젯 (일일, 특별 퀘스트용) - 헌터 프레임 적용
   Widget _buildQuestSection({
     required String title,
-    required List<Rx<QuestModel>> missions,
+    required List<QuestModel> missions,
     required String missionType,
     required Color glowColor,
   }) {
@@ -200,26 +200,23 @@ class Quest extends GetView<QuestController> {
           children: [
             // 커스텀 미션 리스트 또는 빈 상태 표시
             Expanded(
-              child: GetBuilder<QuestController>(
-                  builder: (controller){
-                    return controller.todayCustomMissions.isEmpty
-                        ? _buildEmptyCustomMissions()
-                        : ListView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      padding: EdgeInsets.zero,
-                      itemCount: controller.todayCustomMissions.length,
-                      itemBuilder: (context, index) {
-                        final item = controller.todayCustomMissions[index];
-                        return FadeIn(
-                          delay: Duration(milliseconds: 100 * index),
-                          duration: const Duration(milliseconds: 600),
-                          child: _buildMissionItem(item, 'custom', index),
-                        );
-                      },
+              child: controller.todayCustomMissions.isEmpty
+                  ? _buildEmptyCustomMissions()
+                  : Obx(
+                    ()=> ListView.builder(
+                                    shrinkWrap: true,
+                                    physics: const NeverScrollableScrollPhysics(),
+                                    padding: EdgeInsets.zero,
+                                    itemCount: controller.todayCustomMissions.length,
+                                    itemBuilder: (context, index) {
+                    final item = controller.todayCustomMissions[index];
+                    return FadeIn(
+                      delay: Duration(milliseconds: 100 * index),
+                      duration: const Duration(milliseconds: 600),
+                      child: _buildMissionItem(item, 'custom', index),
                     );
-                  }
-              )
+                                    },),
+                  )
             ),
 
             const SizedBox(height: 8),
@@ -233,8 +230,7 @@ class Quest extends GetView<QuestController> {
 
   // 미션 아이템 위젯
   Widget _buildMissionItem(dynamic item, String missionType, int index) {
-    final isClear = item.value.isClear != null;
-    final isEvenIndex = index % 2 == 0;
+    final isClear = item.isClear != null;
 
     // 미션 종류에 따라 색상 설정
     final Color missionColor = missionType == 'main'
@@ -327,7 +323,7 @@ class Quest extends GetView<QuestController> {
                   // 미션 텍스트
                   Expanded(
                     child: Text(
-                      item.value.quest,
+                      item.quest,
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: isClear ? FontWeight.w400 : FontWeight.w500,
@@ -369,7 +365,7 @@ class Quest extends GetView<QuestController> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          item.value.amount.toString(),
+                          item.amount.toString(),
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
@@ -380,7 +376,7 @@ class Quest extends GetView<QuestController> {
                         ),
                         const SizedBox(width: 2),
                         Text(
-                          item.value.unit,
+                          item.unit,
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
@@ -591,12 +587,12 @@ class Quest extends GetView<QuestController> {
 
   // 미션 탭 처리 함수
   void _handleMissionTap(dynamic item, String missionType) {
-    if(item.value.isClear == null) { // 완료되지 않은 상태
-      if(item.value.id == -1) { // 광고보기 미션
+    if(item.isClear == null) { // 완료되지 않은 상태
+      if(item.id == -1) { // 광고보기 미션
         // 광고 관련 로직
       } else {
         // 미션 완료 처리
-        controller.missionClear(item.value, missionType);
+        controller.missionClear(item, missionType);
 
         // 미션 완료 애니메이션 효과 또는 소리 추가 가능
       }

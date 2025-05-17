@@ -35,12 +35,12 @@ class _TitleCardState extends State<TitleCard> with SingleTickerProviderStateMix
     _animController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 2000),
-    )..repeat(reverse: true);
+    );
 
     // 펄스 애니메이션
     _pulseAnimation = Tween<double>(
       begin: 1.0,
-      end: widget.isSelected ? 1.05 : 1.02,
+      end: widget.isSelected ? 1.05 : 1.00,
     ).animate(
       CurvedAnimation(
         parent: _animController,
@@ -58,6 +58,11 @@ class _TitleCardState extends State<TitleCard> with SingleTickerProviderStateMix
         curve: Curves.easeInOut,
       ),
     );
+
+    // 선택된 항목만 애니메이션 실행
+    if (widget.isSelected) {
+      _animController.repeat(reverse: true);
+    }
   }
 
   @override

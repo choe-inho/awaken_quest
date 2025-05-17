@@ -1,4 +1,5 @@
 import 'package:awaken_quest/utils/items/Job_Info.dart';
+import 'package:awaken_quest/utils/items/Level_Info.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class UserModel {
@@ -19,6 +20,9 @@ class UserModel {
 
   final int exp;           // 현재 경험치
   final int level;         // 현재 레벨
+
+  final int extraStat;
+
   final DateTime createdAt;
 
   const UserModel({
@@ -38,6 +42,7 @@ class UserModel {
     required this.exp,
     required this.level,
     required this.createdAt,
+    required this.extraStat
   });
 
   factory UserModel.fromMap(Map<String, dynamic> map) {
@@ -57,12 +62,20 @@ class UserModel {
       goal: List<String>.from(map['goal'] ?? []),
       exp: map['exp'] ?? 0,
       level: map['level'] ?? 1,
+      extraStat: map['extraStat'] ?? 0,
       createdAt: (map['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
     );
   }
 
   factory UserModel.firstCreate({required String nickname, required String gender,  required List<String> goal,  required String job}){
     final stat = JobInfo.jotToStat(job);
+    final strength = stat['strength']!;
+    final agility = stat['agility']!;
+    final health = stat['health']!;
+    final mana = stat['mana']!;
+    final stamina = stat['stamina']!;
+    final hp = LevelInfo.maxHp(health, strength, agility);
+    final mp = LevelInfo.maxMp(mana, stamina, agility);
 
     return UserModel(
         uid: '',
@@ -70,17 +83,18 @@ class UserModel {
         gender: gender,
         job: job,
         goal: goal,
-        hp: 100,
-        mp: 100,
-        strength: stat['strength']!,
-        agility: stat['agility']!,
-        health: stat['health']!,
-        mana: stat['mana']!,
-        stamina: stat['stamina']!,
+        hp: hp,
+        mp: mp,
+        strength: strength,
+        agility: agility,
+        health: health,
+        mana: mana,
+        stamina: stamina,
         blackMana: 0,
         exp: 0,
         level: 1,
-        createdAt: DateTime.now());
+        createdAt: DateTime.now(),
+        extraStat: 0);
   }
 
 
@@ -102,5 +116,25 @@ class UserModel {
       'level': level,
       'createdAt': Timestamp.fromDate(createdAt),
     };
+  }
+
+  UserModel copyWith({int? level, int? exp, int? mp, int? hp, int? health, int? mana, int? stamina, int? blackMana, int? agility, int? strength, int? extraStat, List<String>? goal, String? nickname, String? job}) {
+    return UserModel(uid: uid,
+        nickname: nickname ?? this.nickname,
+        gender: gender,
+        job: job ?? this.job,
+        hp: hp ?? this.hp,
+        mp: mp ?? this.mp,
+        strength: strength ?? this.strength,
+        agility: agility ??  this.agility,
+        goal: goal ?? this.goal,
+        health: health ?? this.health,
+        mana: mana ?? this.mana,
+        stamina: stamina ?? this.stamina,
+        blackMana: blackMana ?? this.blackMana,
+        exp: exp ?? this.exp,
+        level: level ?? this.level,
+        createdAt: createdAt,
+        extraStat: extraStat ?? this.extraStat);
   }
 }

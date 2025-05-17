@@ -5,6 +5,7 @@ import 'package:awaken_quest/app/bindings/Register_Binding.dart';
 import 'package:awaken_quest/app/controllers/Awakening_Animation_Controller.dart';
 import 'package:awaken_quest/app/pages/loading/Loading.dart';
 import 'package:awaken_quest/app/pages/splash/Splash.dart';
+import 'package:awaken_quest/app/pages/title/Titles_Page.dart';
 
 import '../../utils/manager/Import_Manager.dart';
 import '../pages/home/Home.dart';
@@ -62,6 +63,10 @@ class AppPages {
     GetPage(
         name: AppRoutes.loading,
         page: ()=> const Loading()
+    ),
+    GetPage(
+        name: AppRoutes.title,
+        page: ()=> TitlesPage()
     )
   ];
 }

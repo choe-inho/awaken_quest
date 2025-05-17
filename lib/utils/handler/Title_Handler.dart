@@ -318,6 +318,7 @@ class TitleHandler {
     final uid = _auth.currentUser?.uid;
     if (uid == null) return;
 
+    print('초심자 타이틀 부여');
     // 초심자 칭호 부여
     final initialTitle = titlesBox.get('title_beginner');
     if (initialTitle != null) {
@@ -431,9 +432,13 @@ class TitleHandler {
         'selected_title_id': _currentTitleId,
       });
 
-      // 칭호 획득 이벤트 발생
       for (var title in newlyAcquiredTitles) {
-        _titleAcquiredStream.add(title);
+        try {
+          _titleAcquiredStream.add(title);
+          print('칭호 획득 이벤트 발행: ${title.name}');
+        } catch (e) {
+          print('칭호 이벤트 발행 오류: $e');
+        }
       }
     }
   }

@@ -8,18 +8,7 @@ class AwakeningAnimationController extends GetxController{
 
   @override
   void onReady() {
-    startAnimation();
-    super.onReady();
-  }
-
-  void startAnimation() async{
-    Future.delayed(const Duration(microseconds: 500));
-    _firstDialog();
-  }
-
-
-  void _firstDialog() async {
-    Get.dialog(
+    Future.delayed(const Duration(milliseconds: 300),()=> Get.dialog(
       barrierDismissible: false,
       barrierColor: Colors.black.withValues(alpha: 0.7),
       AwakeningSuccessDialog(
@@ -28,7 +17,8 @@ class AwakeningAnimationController extends GetxController{
             Get.offAllNamed('/job_result');
           },
           nickname: userController.user.value?.nickname ?? '(알수없음)'),
-    );
+    ));
+    super.onReady();
   }
 
 }

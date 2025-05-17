@@ -88,7 +88,6 @@ class UserController extends GetxController{
   Future<void> onUserLogin() async {
     // 로그인 스트릭 계산
     final currentStreak = await _streakHandler.calculateLoginStreak();
-
     // 칭호 시스템과 통합
     await TitleIntegration().integrateWithLoginStreak(currentStreak);
   }
@@ -99,5 +98,12 @@ class UserController extends GetxController{
 
   List<Mission> customTodoList = [];
 
-
+  updateUser({int? level, required int exp, required int mp, required int hp}){
+    user.value = user.value!.copyWith(
+      level: level,
+      exp: exp,
+      mp : mp,
+      hp : hp
+    );
+  }
 }

@@ -1,4 +1,5 @@
 
+import 'package:awaken_quest/utils/items/Level_Info.dart';
 import 'package:awaken_quest/utils/manager/Import_Manager.dart';
 import 'package:intl/intl.dart';
 
@@ -6,14 +7,15 @@ import '../../utils/manager/Title_Integration.dart';
 
 class QuestController extends GetxController {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final _auth = FirebaseAuth.instance;
   RxString today = ''.obs;
-  List<Rx<QuestModel>> todayMainMissions = [];
-  List<Rx<QuestModel>> todaySubMissions = [];
-  List<Rx<QuestModel>> todayCustomMissions = [];
+  RxList<QuestModel> todayMainMissions = <QuestModel>[].obs;
+  RxList<QuestModel> todaySubMissions = <QuestModel>[].obs;
+  RxList<QuestModel> todayCustomMissions = <QuestModel>[].obs;
 
   @override
   void onInit() {
-    today.value = DateFormat('yyyyMMdd').format(DateTime.now());
+    today.value = DateFormat('yyyyMMdd').format(DateTime.now().toLocal());
     getTodayQuest();
     super.onInit();
   }
@@ -43,20 +45,19 @@ class QuestController extends GetxController {
 
         if (data.exists && data.data() != null) {
           final rawData = data.data()!;
-          print(data.data());
 
           todayMainMissions = List<Map<String, dynamic>>.from(rawData['main'])
-              .map((e) => Rx<QuestModel>(QuestModel.fromJson(e)))
-              .toList();
+              .map((e) => QuestModel.fromJson(e))
+              .toList().obs;
 
           todaySubMissions = List<Map<String, dynamic>>.from(rawData['sub'])
-              .map((e) => Rx<QuestModel>(QuestModel.fromJson(e)))
-              .toList();
+              .map((e) => QuestModel.fromJson(e))
+              .toList().obs;
 
           todayCustomMissions =
               List<Map<String, dynamic>>.from(rawData['custom'] ?? [])
-                  .map((e) => Rx<QuestModel>(QuestModel.fromJson(e)))
-                  .toList();
+                  .map((e) => QuestModel.fromJson(e))
+                  .toList().obs;
 
           initialized = true;
         } else {
@@ -126,6 +127,7 @@ class QuestController extends GetxController {
   Future<void> missionClear(QuestModel item, String type) async {
     try {
       final uid = FirebaseAuth.instance.currentUser?.uid;
+
       if (uid == null) {
         DialogFrame.errorHandler("시스템과 상태창의 연결이 끊겼습니다");
         return;
@@ -157,25 +159,42 @@ class QuestController extends GetxController {
         });
 
         final updatedList = missions
-            .map((e) => Rx<QuestModel>(QuestModel.fromJson(e)))
+            .map((e) => QuestModel.fromJson(e))
             .toList();
 
-        print("미션 완료 처리 완료 (id: $id, type: $type)");
-
+        // 상태 업데이트 - 중요한 부분
         if (type == "main") {
-          todayMainMissions = updatedList;
+          todayMainMissions.clear(); // 기존 목록 클리어
+          todayMainMissions.addAll(updatedList); // 새 목록 추가
         } else if (type == "sub") {
-          todaySubMissions = updatedList;
+          todaySubMissions.clear();
+          todaySubMissions.addAll(updatedList);
         } else if (type == "custom") {
-          todayCustomMissions = updatedList;
+          todayCustomMissions.clear();
+          todayCustomMissions.addAll(updatedList);
         }
 
+
         // 미션 완료 후 칭호 체크
-        final userController = Get.find();
+        //사용자의 수치변경
+        await calculateUserStat(item);
+
+        final userController = Get.find<UserController>();
         await TitleIntegration().integrateWithMissionComplete(
             this,
             type,
             userController.user.value?.job ?? '전사'
+        );
+
+        // 미션 완료 알림 표시 (선택사항)
+        Get.snackbar(
+          '미션 완료!',
+          '미션을 성공적으로 완료했습니다',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.green.withValues(alpha: 0.7),
+          colorText: Colors.white,
+          duration: const Duration(seconds: 2),
+          margin: const EdgeInsets.all(16),
         );
 
       } else {
@@ -186,6 +205,62 @@ class QuestController extends GetxController {
     }
   }
 
+  //레벨 판정
+  calculateUserStat(QuestModel item) async {
+    final userController = Get.find<UserController>();
+    final user = userController.user.value!;
+    final level = user.level;
+    final gained_exp = item.exp;
+    final rand = Random();
+    final my_mp = user.mp;
+    final my_hp = user.hp;
+
+    final hp = JobInfo.plusHp.contains(item.id) ? rand.nextInt(9) + 1 : -(rand.nextInt(14) + 1);
+    final mp = rand.nextDouble() <= 0.2 ? rand.nextInt(9) + 1 : -(rand.nextInt(14)+1);
+
+    final new_hp = my_hp - hp;
+    final new_mp = my_mp - mp;
+
+    final max_exp = LevelInfo.maxExpPrev + (LevelInfo.baseExp + level * LevelInfo.factor);
+    final total_exp = user.exp + gained_exp;
+
+    if (total_exp >= max_exp) {
+      final new_exp = total_exp - max_exp;
+      final new_level = level + 1;
+
+      // 1. Firestore 업데이트
+      await _firestore.collection('users').doc(_auth.currentUser!.uid).update({
+        'level': new_level,
+        'exp': new_exp,
+        'hp' : new_hp,
+        'mp' : new_mp
+      });
+
+      // 2. 로컬 모델 업데이트
+      userController.updateUser(
+          level: new_level,
+          exp: new_exp.toInt(),
+          hp: new_hp,
+          mp: new_mp
+      );
+      userController.user.refresh(); // GetX에서 Rx 객체 수동 갱신
+    } else {
+      // 1. Firestore 업데이트
+      await _firestore.collection('users').doc(_auth.currentUser!.uid).update({
+        'exp': total_exp,
+        'hp' : new_hp,
+        'mp' : new_mp
+      });
+
+      // 2. 로컬 모델 업데이트
+      userController.updateUser(
+          exp: total_exp.toInt(),
+          hp: new_hp,
+          mp: new_mp
+      );
+      userController.user.refresh();
+    }
+  }
 
   //미션 생성용
   Map<String, dynamic> toMap(Mission mission, String type){

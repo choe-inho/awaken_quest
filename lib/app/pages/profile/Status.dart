@@ -1,4 +1,6 @@
+import 'package:awaken_quest/app/widgets/Title_Display.dart';
 import 'package:awaken_quest/model/User_Model.dart';
+import 'package:awaken_quest/utils/items/Level_Info.dart';
 import '../../../utils/manager/Import_Manager.dart';
 import 'dart:math' as math;
 import '../../widgets/Hunter_Status_Frame.dart';
@@ -13,28 +15,10 @@ class Status extends StatefulWidget {
 class _StatusState extends State<Status> with SingleTickerProviderStateMixin {
   late final HomeController controller;
 
-  // 애니메이션 컨트롤러 추가
-  late AnimationController _animationController;
-
   // 랜덤 효과를 위한 난수 생성기
   final Random _random = Random();
 
-  @override
-  void initState() {
-    super.initState();
 
-    // 애니메이션 컨트롤러 초기화
-    _animationController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 2000),
-    )..repeat(reverse: true);
-  }
-
-  @override
-  void dispose() {
-    _animationController.dispose();
-    super.dispose();
-  }
 
 
   @override
@@ -102,20 +86,12 @@ class _StatusState extends State<Status> with SingleTickerProviderStateMixin {
             return Positioned(
               left: left,
               top: top,
-              child: AnimatedBuilder(
-                animation: _animationController,
-                builder: (context, child) {
-                  return Opacity(
-                    opacity: 0.1 + (_animationController.value * 0.4),
-                    child: Container(
-                      width: size,
-                      height: size,
-                      decoration: BoxDecoration(
-                        border: Border.all(color: color, width: 1),
-                      ),
-                    ),
-                  );
-                },
+              child: Container(
+                width: size,
+                height: size,
+                decoration: BoxDecoration(
+                  border: Border.all(color: color, width: 1),
+                ),
               ),
             );
 
@@ -123,20 +99,12 @@ class _StatusState extends State<Status> with SingleTickerProviderStateMixin {
             return Positioned(
               left: left,
               top: top,
-              child: AnimatedBuilder(
-                animation: _animationController,
-                builder: (context, child) {
-                  return Opacity(
-                    opacity: 0.1 + (_animationController.value * 0.4),
-                    child: SizedBox(
-                      width: size,
-                      height: size,
-                      child: CustomPaint(
-                        painter: CrossPainter(color: color),
-                      ),
-                    ),
-                  );
-                },
+              child:SizedBox(
+                width: size,
+                height: size,
+                child: CustomPaint(
+                  painter: CrossPainter(color: color),
+                ),
               ),
             );
 
@@ -144,21 +112,13 @@ class _StatusState extends State<Status> with SingleTickerProviderStateMixin {
             return Positioned(
               left: left,
               top: top,
-              child: AnimatedBuilder(
-                animation: _animationController,
-                builder: (context, child) {
-                  return Opacity(
-                    opacity: 0.1 + (_animationController.value * 0.4),
-                    child: Container(
-                      width: size,
-                      height: size,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: color, width: 1),
-                      ),
-                    ),
-                  );
-                },
+              child: Container(
+                width: size,
+                height: size,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: color, width: 1),
+                ),
               ),
             );
 
@@ -167,21 +127,13 @@ class _StatusState extends State<Status> with SingleTickerProviderStateMixin {
             return Positioned(
               left: left,
               top: top,
-              child: AnimatedBuilder(
-                animation: _animationController,
-                builder: (context, child) {
-                  return Opacity(
-                    opacity: 0.1 + (_animationController.value * 0.4),
-                    child: Transform.rotate(
-                      angle: _random.nextDouble() * math.pi,
-                      child: Container(
-                        width: size,
-                        height: 1,
-                        color: color,
-                      ),
-                    ),
-                  );
-                },
+              child: Transform.rotate(
+                angle: _random.nextDouble() * math.pi,
+                child: Container(
+                  width: size,
+                  height: 1,
+                  color: color,
+                ),
               ),
             );
         }
@@ -206,6 +158,13 @@ class _StatusState extends State<Status> with SingleTickerProviderStateMixin {
         padding: const EdgeInsets.fromLTRB(16, 30, 16, 16),
         child: Column(
           children: [
+            //칭호
+            InkWell(
+                onTap: ()=> Get.toNamed('/title'),
+                child: TitleDisplay()),
+
+            const SizedBox(height: 20),
+
             // 상단 정보 섹션
             _buildInfoSection(user, userController),
 
@@ -218,7 +177,6 @@ class _StatusState extends State<Status> with SingleTickerProviderStateMixin {
 
             // 스탯 섹션
             _buildStatsSection(user, jobColor),
-
           ],
         ),
       ),
@@ -267,36 +225,6 @@ class _StatusState extends State<Status> with SingleTickerProviderStateMixin {
               ),
             ],
           ),
-
-          const SizedBox(height: 12),
-
-          // 피로도 표시 (날짜 기반)
-          Row(
-            children: [
-              Icon(
-                BootstrapIcons.award_fill,
-                color: Colors.amber.withAlpha(200),
-                size: 16,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                "칭호",
-                style: TextStyle(
-                  color: Colors.white.withAlpha(200),
-                  fontSize: 14,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                "",
-                style: TextStyle(
-                  color: Colors.amber.withAlpha(220),
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
         ],
       ),
     );
@@ -341,8 +269,9 @@ class _StatusState extends State<Status> with SingleTickerProviderStateMixin {
 
   // HP/MP 바 섹션
   Widget _buildHpMpSection(UserModel user) {
-    final maxHp = user.level * 100;
-    final maxMp = user.level * 100;
+    final maxHp = LevelInfo.maxHp(user.health, user.strength, user.agility);
+    final maxMp = LevelInfo.maxMp(user.mana, user.stamina, user.agility);
+    final maxExp = LevelInfo.maxExp(user.level);
 
     return Container(
       decoration: BoxDecoration(
@@ -377,6 +306,20 @@ class _StatusState extends State<Status> with SingleTickerProviderStateMixin {
             secondaryColor: const Color(0xFF66A3FF),
             iconData: BootstrapIcons.droplet_fill,
           ),
+
+          const SizedBox(height: 16),
+
+
+          // 경험치 바
+          _buildStatusBar(
+            label: "EXP",
+            current: user.exp,
+            max: maxExp,
+            primaryColor: const Color(0xFF9B4DFF),  // 보라색 계열
+            secondaryColor: const Color(0xFF00CFFF), // 하늘색 그라데이션
+            iconData: BootstrapIcons.lightning_charge_fill,  // 번개 아이콘으로 파워업 느낌
+          ),
+
         ],
       ),
     );

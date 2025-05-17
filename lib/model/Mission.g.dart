@@ -21,7 +21,9 @@ class MissionAdapter extends TypeAdapter<Mission> {
       title: fields[1] as String,
       unit: fields[2] as String,
       baseAmount: fields[3] as int,
-      baseExp: 0,
+      baseExp: fields[4] as int,
+      hp: fields[5] as int,
+      mp: fields[6] as int
     );
   }
 
