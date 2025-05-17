@@ -42,6 +42,7 @@ class Mission {
   factory Mission.toMission({required String title, required int baseAmount, required String unit}){ //커스텀일경우
     final getLastId = HiveHandler.allQuest.lastOrNull?.id ?? 0;
     final rand = Random();
-    return Mission(id: 10000 + getLastId, title: title, unit: unit, baseAmount: baseAmount, baseExp: rand.nextInt(1) + 9, hp: rand.nextInt(15)+5, mp: rand.nextInt(15)+5);
+    return Mission(id: 10000 + getLastId, title: title, unit: unit, baseAmount: baseAmount, baseExp:rand.nextInt(9) + 1, hp: rand.nextInt(15)+5, mp: rand.nextInt(15)+5);
   }
+
 }

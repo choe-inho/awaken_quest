@@ -7,6 +7,8 @@ class QuestModel{
   final String unit;
   final int amount;
   final int exp;
+  final int hp;
+  final int mp;
 
   QuestModel({
     required this.id,
@@ -14,7 +16,9 @@ class QuestModel{
     required this.isClear,
     required this.unit,
     required this.amount,
-    required this.exp
+    required this.exp,
+    required this.hp,
+    required this.mp
   });
 
   factory QuestModel.fromJson(Map<String, dynamic> map) {
@@ -37,11 +41,14 @@ class QuestModel{
     // ✅ Timestamp -> DateTime 변환 (nullable-safe)
     final isClearRaw = map['isClear'];
     DateTime? isClearTime;
+
     if (isClearRaw is Timestamp) {
       isClearTime = isClearRaw.toDate();
     } else if (isClearRaw is DateTime) {
       isClearTime = isClearRaw;
-    } else {
+    } else if(isClearRaw is String){
+      isClearTime = DateTime.parse(isClearRaw);
+    }else{
       isClearTime = null;
     }
 
@@ -51,7 +58,9 @@ class QuestModel{
       isClear: isClearTime,
       unit: mission?.unit ?? "??",
       amount: mission?.baseAmount ?? 99 + ((mission?.baseAmount ?? 99) * (userController.user.value!.level * 0.1).toInt()),
-      exp: mission?.baseExp ?? 0 + (mission?.baseAmount ?? 0 * (userController.user.value!.level * 0.1).toInt()),
+      exp: mission?.baseExp ?? 0 + (mission?.baseAmount ?? 1 * (userController.user.value!.level * 0.1).toInt()),
+      hp: (mission?.hp ?? 3) * (userController.user.value!.level),
+      mp: (mission?.mp ?? 3) * (userController.user.value!.level),
     );
   }
 

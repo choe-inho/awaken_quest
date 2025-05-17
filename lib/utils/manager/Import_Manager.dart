@@ -22,8 +22,6 @@ export 'package:awaken_quest/app/controllers/User_Controller.dart';
 export 'package:awaken_quest/app/controllers/Home_Controller.dart';
 
 //util
-export 'package:awaken_quest/app/widgets/Rotating_Box.dart';
-export 'package:awaken_quest/app/widgets/Status_Button.dart';
 export 'package:awaken_quest/app/widgets/Glitch_Text.dart';
 export 'package:awaken_quest/utils/handler/Firebase_Exception_Handler.dart';
 export 'package:awaken_quest/app/widgets/Basic_Text_Field.dart';

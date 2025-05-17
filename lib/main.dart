@@ -23,16 +23,13 @@ void main() async{
     Hive.registerAdapter(MissionAdapter()); //미션 어뎁터 등록
     registerTitleAdapters(); // 칭호 어댑터 등록
 
+    if (!Hive.isBoxOpen('customMissionBox')) {
+      await Hive.openBox<Mission>('customMissionBox');
+    }
     // 각 박스 오픈 - 이미 열려있는지 확인 후 열기
     if (!Hive.isBoxOpen('customMissionBox')) {
       await Hive.openBox('customMissionBox');
     }
-
-    final titleHandler = TitleHandler();
-    titleHandler.onTitleAcquired.listen((title) {
-      // 현재 컨텍스트에 관계없이 다이얼로그 표시
-      Get.dialog(TitleAchievementDialog(title: title));
-    });
 
   } catch (e) {
     print('Hive 초기화 오류: $e');

@@ -2,6 +2,7 @@ import 'package:awaken_quest/app/controllers/Quest_Controller.dart';
 import 'package:awaken_quest/app/pages/loading/Loading.dart';
 import 'package:intl/intl.dart';
 import '../../../utils/manager/Import_Manager.dart';
+import '../../widgets/Day_Countdown_Timer.dart';
 import '../../widgets/Hunter_Status_Frame.dart'; // 헌터 상태창 import
 
 class Quest extends GetView<QuestController> {
@@ -25,15 +26,15 @@ class Quest extends GetView<QuestController> {
           child: Column(
             children: [
               const SizedBox(height: 24),
-      
+
               // 오늘 날짜 표시 (애니메이션 효과와 함께)
               FadeInDown(
                 duration: const Duration(milliseconds: 800),
                 child: _buildDateHeader(),
               ),
-      
+
               const SizedBox(height: 20),
-      
+
               // 일일 퀘스트 섹션
               FadeInLeft(
                 duration: const Duration(milliseconds: 600),
@@ -44,9 +45,9 @@ class Quest extends GetView<QuestController> {
                   glowColor: const Color(0xFF5D00FF),
                 ),
               ),
-      
+
               const SizedBox(height: 20),
-      
+
               // 특별 퀘스트 섹션
               FadeInRight(
                 duration: const Duration(milliseconds: 700),
@@ -58,16 +59,16 @@ class Quest extends GetView<QuestController> {
                   glowColor: const Color(0xFFFF5500),
                 ),
               ),
-      
+
               const SizedBox(height: 20),
-      
+
               // 개인 커스텀 퀘스트 섹션
               FadeInUp(
                 duration: const Duration(milliseconds: 800),
                 delay: const Duration(milliseconds: 400),
                 child: _buildCustomQuestSection(),
               ),
-      
+
               const SizedBox(height: 30),
             ],
           ),
@@ -79,57 +80,48 @@ class Quest extends GetView<QuestController> {
   // 날짜 헤더 위젯 - 헌터 프레임 적용
   Widget _buildDateHeader() {
     final now = DateTime.now();
-    final dateFormat = DateFormat('yyyy년 MM월 dd일');
-    final weekdayFormat = DateFormat('EEEE', 'ko_KR'); // 한국어 요일 표시
+    final dateFormat = DateFormat('yyyy년 MM월 dd일 E', 'ko_KR');
 
-    return HunterStatusFrame(
-      width: Get.width,
-      height: 60,
-      primaryColor: const Color(0xFF5D00FF),
-      secondaryColor: const Color(0xFF9000FF),
-      borderWidth: 1.8,
-      cornerSize: 10,
-      polygonSides: 0, // 직사각형 모드
-      showStatusLines: false,
-      showInnerBorder: false,
-      glowIntensity: 1.2,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
           children: [
-            Row(
-              children: [
-                Text(
-                  dateFormat.format(now),
-                  style: TextStyle(
-                    color: Colors.white.withAlpha(240),
-                    fontWeight: FontWeight.w600,
-                    fontSize: 16,
-                  ),
-                ),
-              ],
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.white.withAlpha(40),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                weekdayFormat.format(now),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w500,
-                  fontSize: 14,
-                ),
+            Text(
+              dateFormat.format(now),
+              style: TextStyle(
+                color: Colors.white.withAlpha(240),
+                fontWeight: FontWeight.w600,
+                fontSize: 16,
               ),
             ),
           ],
         ),
-      ),
+        SizedBox(height: 12,),
+        Center(
+          child: HunterStatusFrame(
+            width: Get.width - 40,
+            height: 60,
+            // 높이를 약간 더 높게 설정하여 카운트다운과 날짜를 모두 표시
+            primaryColor: Get.theme.colorScheme.primary,
+            secondaryColor: Get.theme.colorScheme.secondary,
+            borderWidth: 1.8,
+            cornerSize: 10,
+            polygonSides: 0,
+            // 직사각형 모드
+            showStatusLines: false,
+            showInnerBorder: false,
+            glowIntensity: 1.2,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: DayCountdownTimer(),
+            ),
+          ),
+        ),
+      ],
     );
   }
+
 
   // 퀘스트 섹션 위젯 (일일, 특별 퀘스트용) - 헌터 프레임 적용
   Widget _buildQuestSection({
@@ -215,7 +207,7 @@ class Quest extends GetView<QuestController> {
                       duration: const Duration(milliseconds: 600),
                       child: _buildMissionItem(item, 'custom', index),
                     );
-                                    },),
+                    },),
                   )
             ),
 
@@ -617,191 +609,201 @@ class Quest extends GetView<QuestController> {
     final TextEditingController unitController = TextEditingController();
 
     Get.dialog(
+      barrierDismissible: false,
       FadeIn(
         duration: const Duration(milliseconds: 200),
         child: Dialog(
           backgroundColor: Colors.transparent,
-          child: HunterStatusFrame(
-            width: 320,
-            height: 320,
-            primaryColor: const Color(0xFF0055FF),
-            secondaryColor: const Color(0xFF00A3FF),
-            borderWidth: 2.0,
-            cornerSize: 12,
-            polygonSides: 0, // 직사각형 모드
-            title: '나만의 미션 추가',
-            showStatusLines: false,
-            showInnerBorder: true,
-            glowIntensity: 1.2,
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const SizedBox(height: 15),
+          child: GestureDetector(
+            onTap: ()=> FocusScope.of(Get.context!).unfocus(),
+            child: HunterStatusFrame(
+              width: 320,
+              height: 320,
+              primaryColor: const Color(0xFF0055FF),
+              secondaryColor: const Color(0xFF00A3FF),
+              borderWidth: 2.0,
+              cornerSize: 12,
+              polygonSides: 2, // 직사각형 모드
+              title: '나만의 미션 추가',
+              showStatusLines: false,
+              showInnerBorder: true,
+              glowIntensity: 1.2,
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const SizedBox(height: 15),
 
-                  // 미션 내용 입력 필드
-                  TextField(
-                    controller: missionController,
-                    style: const TextStyle(color: Colors.white),
-                    decoration: InputDecoration(
-                      hintText: '미션 내용',
-                      hintStyle: TextStyle(color: Colors.white.withAlpha(120)),
-                      filled: true,
-                      fillColor: Colors.black.withAlpha(100),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(6),
-                        borderSide: BorderSide(
-                          color: const Color(0xFF0055FF).withAlpha(100),
-                          width: 1.5,
+                    // 미션 내용 입력 필드
+                    TextField(
+                      controller: missionController,
+                      style: const TextStyle(color: Colors.white),
+                      decoration: InputDecoration(
+                        hintText: '미션 내용',
+                        hintStyle: TextStyle(color: Colors.white.withAlpha(120)),
+                        filled: true,
+                        fillColor: Colors.black.withAlpha(100),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(6),
+                          borderSide: BorderSide(
+                            color: const Color(0xFF0055FF).withAlpha(100),
+                            width: 1.5,
+                          ),
                         ),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(6),
-                        borderSide: BorderSide(
-                          color: const Color(0xFF0055FF).withAlpha(100),
-                          width: 1.5,
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(6),
+                          borderSide: BorderSide(
+                            color: const Color(0xFF0055FF).withAlpha(100),
+                            width: 1.5,
+                          ),
                         ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(6),
-                        borderSide: BorderSide(
-                          color: const Color(0xFF0055FF).withAlpha(180),
-                          width: 2,
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(6),
+                          borderSide: BorderSide(
+                            color: const Color(0xFF0055FF).withAlpha(180),
+                            width: 2,
+                          ),
                         ),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                       ),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                     ),
-                  ),
 
-                  const SizedBox(height: 12),
+                    const SizedBox(height: 12),
 
-                  // 수량 및 단위 입력 필드
-                  Row(
-                    children: [
-                      // 수량 입력
-                      Expanded(
-                        flex: 3,
-                        child: TextField(
-                          controller: amountController,
-                          keyboardType: TextInputType.number,
-                          style: const TextStyle(color: Colors.white),
-                          decoration: InputDecoration(
-                            hintText: '수량',
-                            hintStyle: TextStyle(color: Colors.white.withAlpha(120)),
-                            filled: true,
-                            fillColor: Colors.black.withAlpha(100),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(6),
-                              borderSide: BorderSide(
-                                color: const Color(0xFF0055FF).withAlpha(100),
-                                width: 1.5,
+                    // 수량 및 단위 입력 필드
+                    Row(
+                      children: [
+                        // 수량 입력
+                        Expanded(
+                          flex: 3,
+                          child: TextField(
+                            controller: amountController,
+                            keyboardType: TextInputType.number,
+                            style: const TextStyle(color: Colors.white),
+                            decoration: InputDecoration(
+                              hintText: '수량',
+                              hintStyle: TextStyle(color: Colors.white.withAlpha(120)),
+                              filled: true,
+                              fillColor: Colors.black.withAlpha(100),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(6),
+                                borderSide: BorderSide(
+                                  color: const Color(0xFF0055FF).withAlpha(100),
+                                  width: 1.5,
+                                ),
                               ),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(6),
-                              borderSide: BorderSide(
-                                color: const Color(0xFF0055FF).withAlpha(100),
-                                width: 1.5,
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(6),
+                                borderSide: BorderSide(
+                                  color: const Color(0xFF0055FF).withAlpha(100),
+                                  width: 1.5,
+                                ),
                               ),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(6),
-                              borderSide: BorderSide(
-                                color: const Color(0xFF0055FF).withAlpha(180),
-                                width: 2,
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(6),
+                                borderSide: BorderSide(
+                                  color: const Color(0xFF0055FF).withAlpha(180),
+                                  width: 2,
+                                ),
                               ),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                             ),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                           ),
                         ),
-                      ),
 
-                      const SizedBox(width: 10),
+                        const SizedBox(width: 10),
 
-                      // 단위 입력
-                      Expanded(
-                        flex: 2,
-                        child: TextField(
-                          controller: unitController,
-                          style: const TextStyle(color: Colors.white),
-                          decoration: InputDecoration(
-                            hintText: '단위',
-                            hintStyle: TextStyle(color: Colors.white.withAlpha(120)),
-                            filled: true,
-                            fillColor: Colors.black.withAlpha(100),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(6),
-                              borderSide: BorderSide(
-                                color: const Color(0xFF0055FF).withAlpha(100),
-                                width: 1.5,
+                        // 단위 입력
+                        Expanded(
+                          flex: 2,
+                          child: TextField(
+                            controller: unitController,
+                            style: const TextStyle(color: Colors.white),
+                            decoration: InputDecoration(
+                              hintText: '단위',
+                              hintStyle: TextStyle(color: Colors.white.withAlpha(120)),
+                              filled: true,
+                              fillColor: Colors.black.withAlpha(100),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(6),
+                                borderSide: BorderSide(
+                                  color: const Color(0xFF0055FF).withAlpha(100),
+                                  width: 1.5,
+                                ),
                               ),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(6),
-                              borderSide: BorderSide(
-                                color: const Color(0xFF0055FF).withAlpha(100),
-                                width: 1.5,
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(6),
+                                borderSide: BorderSide(
+                                  color: const Color(0xFF0055FF).withAlpha(100),
+                                  width: 1.5,
+                                ),
                               ),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(6),
-                              borderSide: BorderSide(
-                                color: const Color(0xFF0055FF).withAlpha(180),
-                                width: 2,
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(6),
+                                borderSide: BorderSide(
+                                  color: const Color(0xFF0055FF).withAlpha(180),
+                                  width: 2,
+                                ),
                               ),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                             ),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
+                      ],
+                    ),
 
-                  const SizedBox(height: 24),
+                    const SizedBox(height: 24),
 
-                  // 버튼들 - 헌터 상태창 스타일
-                  Row(
-                    children: [
-                      // 취소 버튼
-                      Expanded(
-                        child: _buildDialogButton(
-                          label: '취소',
-                          onPressed: () {
-                            Get.back();
-                          },
-                          isCancel: true,
-                        ),
-                      ),
-
-                      const SizedBox(width: 12),
-
-                      // 추가 버튼
-                      Expanded(
-                        child: _buildDialogButton(
-                          label: '추가',
-                          onPressed: () {
-                            // 미션 추가 로직
-                            if (missionController.text.isNotEmpty &&
-                                amountController.text.isNotEmpty &&
-                                unitController.text.isNotEmpty) {
+                    // 버튼들 - 헌터 상태창 스타일
+                    Row(
+                      children: [
+                        // 취소 버튼
+                        Expanded(
+                          child: _buildDialogButton(
+                            label: '취소',
+                            onPressed: () {
                               Get.back();
-                            } else {
-                              Get.snackbar(
-                                '입력 오류',
-                                '모든 필드를 입력해주세요',
-                                backgroundColor: Colors.black.withAlpha(150),
-                                colorText: Colors.white,
-                                snackPosition: SnackPosition.BOTTOM,
-                              );
-                            }
-                          },
-                          isCancel: false,
+                            },
+                            isCancel: true,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                ],
+
+                        const SizedBox(width: 12),
+
+                        // 추가 버튼
+                        Expanded(
+                          child: _buildDialogButton(
+                            label: '추가',
+                            onPressed: () {
+                              // 미션 추가 로직
+                              if (missionController.text.isNotEmpty &&
+                                  amountController.text.isNotEmpty &&
+                                  unitController.text.isNotEmpty) {
+                                // 컨트롤러로 미션 추가 호출
+                                controller.addCustomMission(
+                                    missionController.text,
+                                    int.parse(amountController.text),
+                                    unitController.text
+                                );
+                                Get.back();
+                              } else {
+                                Get.snackbar(
+                                  '입력 오류',
+                                  '모든 필드를 입력해주세요',
+                                  backgroundColor: Colors.black.withAlpha(150),
+                                  colorText: Colors.white,
+                                  snackPosition: SnackPosition.BOTTOM,
+                                );
+                              }
+                            },
+                            isCancel: false,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -816,6 +818,7 @@ class Quest extends GetView<QuestController> {
     required VoidCallback onPressed,
     required bool isCancel,
   }) {
+
     final Color buttonColor = isCancel
         ? Colors.redAccent.withAlpha(120)
         : const Color(0xFF0055FF).withAlpha(120);

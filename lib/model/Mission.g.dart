@@ -30,7 +30,7 @@ class MissionAdapter extends TypeAdapter<Mission> {
   @override
   void write(BinaryWriter writer, Mission obj) {
     writer
-      ..writeByte(4)
+      ..writeByte(7)  // 필드 7개 (id, title, unit, baseAmount, baseExp, hp, mp)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -38,7 +38,13 @@ class MissionAdapter extends TypeAdapter<Mission> {
       ..writeByte(2)
       ..write(obj.unit)
       ..writeByte(3)
-      ..write(obj.baseAmount);
+      ..write(obj.baseAmount)
+      ..writeByte(4)
+      ..write(obj.baseExp)
+      ..writeByte(5)
+      ..write(obj.hp)
+      ..writeByte(6)
+      ..write(obj.mp);
   }
 
   @override

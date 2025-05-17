@@ -8,6 +8,7 @@ import 'package:awaken_quest/app/pages/splash/Splash.dart';
 import 'package:awaken_quest/app/pages/title/Titles_Page.dart';
 
 import '../../utils/manager/Import_Manager.dart';
+import '../bindings/Day_Countdown_Timer_Binding.dart';
 import '../pages/home/Home.dart';
 import '../pages/quests/Quest.dart';
 import '../pages/setting/Setting.dart';
@@ -52,6 +53,7 @@ class AppPages {
       transition: Transition.fade,
       bindings: [
         HomeBinding(),
+        DayCountdownTimerBinding(),
         QuestBinding(),
         JournalBinding()
       ]

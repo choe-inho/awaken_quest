@@ -1,5 +1,6 @@
 import 'package:awaken_quest/app/widgets/Title_Display.dart';
 import 'package:awaken_quest/model/User_Model.dart';
+import 'package:awaken_quest/utils/dialog/Basic_Dialog.dart';
 import 'package:awaken_quest/utils/items/Level_Info.dart';
 import '../../../utils/manager/Import_Manager.dart';
 import 'dart:math' as math;
@@ -13,54 +14,43 @@ class Status extends StatefulWidget {
 }
 
 class _StatusState extends State<Status> with SingleTickerProviderStateMixin {
-  late final HomeController controller;
-
-  // 랜덤 효과를 위한 난수 생성기
+  final controller = Get.find<HomeController>();
   final Random _random = Random();
-
-
-
 
   @override
   Widget build(BuildContext context) {
-    controller = Get.find<HomeController>();
-    final userController = Get.find<UserController>();
-    final user = userController.user.value!;
-
     // 직업에 따른 색상 설정
-    final jobColor = JobInfo.jobToColor(user.job);
+    final jobColor = JobInfo.jobToColor(Get.find<UserController>().user.value!.job);
 
     return SafeArea(
-      child: SingleChildScrollView(
-        child: SizedBox(
-          height: Get.height,
-          child: Stack(
-            children: [
-              // 어두운 오버레이
-              Positioned.fill(
-                child: Container(
-                  color: Colors.black.withAlpha(180),
-                ),
+      child: SizedBox(
+        height: Get.height,
+        child: Stack(
+          children: [
+            // 어두운 오버레이
+            Positioned.fill(
+              child: Container(
+                color: Colors.black.withAlpha(180),
               ),
+            ),
 
-              // 배경 효과 (헌터 이펙트) - 랜덤한 기하학적 요소들
-              Positioned.fill(
-                child: _buildHunterEffects(jobColor),
-              ),
+            // 배경 효과 (헌터 이펙트) - 랜덤한 기하학적 요소들
+            Positioned.fill(
+              child: _buildHunterEffects(jobColor),
+            ),
 
-              // 상태창
-              Positioned(
-                top: 20,
-                left: 20,
-                right: 20,
-                bottom: 20,
-                child: ZoomIn(
-                  duration: const Duration(milliseconds: 600),
-                  child: _buildHunterStatusCard(user, userController, jobColor),
-                ),
+            // 상태창
+            Positioned(
+              top: 20,
+              left: 20,
+              right: 20,
+              bottom: 20,
+              child: ZoomIn(
+                duration: const Duration(milliseconds: 600),
+                child: FittedBox(child: _buildHunterStatusCard(jobColor)),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -142,44 +132,58 @@ class _StatusState extends State<Status> with SingleTickerProviderStateMixin {
   }
 
   // 헌터 스타일 상태창 카드
-  Widget _buildHunterStatusCard(UserModel user, UserController userController, Color jobColor) {
-    return HunterStatusFrame(
-      width: Get.width - 40,
-      height: Get.height - 120,
-      primaryColor: jobColor,
-      secondaryColor: _getSecondaryColor(jobColor),
-      borderWidth: 2.5,
-      cornerSize: 15,
-      polygonSides: 6, // 육각형 형태
-      title: "${user.nickname}의 상태창",
-      showStatusLines: true,
-      glowIntensity: 1.5,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 30, 16, 16),
-        child: Column(
-          children: [
-            //칭호
-            InkWell(
-                onTap: ()=> Get.toNamed('/title'),
-                child: TitleDisplay()),
+  Widget _buildHunterStatusCard(Color jobColor) {
+    return GetBuilder<UserController>(
+      builder: (userController) {
+        final user  = userController.user.value!;
+        return HunterStatusFrame(
+          width: Get.width - 40,
+          height: Get.height - 120,
+          primaryColor: jobColor,
+          secondaryColor: _getSecondaryColor(jobColor),
+          borderWidth: 2.5,
+          cornerSize: 15,
+          polygonSides: 6, // 육각형 형태
+          title: "${user.nickname}의 상태창",
+          showStatusLines: true,
+          glowIntensity: 1.5,
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 30, 16, 16),
+              child: Column(
+                children: [
+                  //칭호
+                  InkWell(
+                      onTap: ()=> Get.toNamed('/title'),
+                      child: TitleDisplay()),
 
-            const SizedBox(height: 20),
+                  const SizedBox(height: 20),
 
-            // 상단 정보 섹션
-            _buildInfoSection(user, userController),
+                  // 상단 정보 섹션
+                  _buildInfoSection(user, userController),
 
-            const SizedBox(height: 20),
+                  const SizedBox(height: 20),
 
-            // HP/MP 바 섹션
-            _buildHpMpSection(user),
+                  // HP/MP 바 섹션
+                  _buildHpMpSection(user),
 
-            const SizedBox(height: 16),
+                  const SizedBox(height: 16),
 
-            // 스탯 섹션
-            _buildStatsSection(user, jobColor),
-          ],
-        ),
-      ),
+                  // 스탯 섹션
+                  _buildStatsSection(jobColor, userController),
+
+                  const SizedBox(height: 16),
+
+                  //정보수정 버튼
+                  HunterButton(text: '정보수정', onTap: (){
+
+                  })
+                ],
+              ),
+            ),
+          ),
+        );
+      }
     );
   }
 
@@ -431,7 +435,8 @@ class _StatusState extends State<Status> with SingleTickerProviderStateMixin {
   }
 
   // 스탯 섹션
-  Widget _buildStatsSection(UserModel user, Color jobColor) {
+  Widget _buildStatsSection(Color jobColor, UserController userController){
+    final user = userController.user.value!;
     return Container(
       decoration: BoxDecoration(
         color: Colors.black.withAlpha(120),
@@ -467,97 +472,161 @@ class _StatusState extends State<Status> with SingleTickerProviderStateMixin {
           ),
 
           const SizedBox(height: 12),
+          //잔여 스탯
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              Text('배분 가능 스탯: ${user.extraStat}'),
+            ],
+          ),
 
+          const SizedBox(height: 8),
           // 스탯 표시
-          _buildStatRow("근력", user.strength, jobColor),
-          _buildStatRow("체력", user.health, jobColor),
-          _buildStatRow("민첩", user.stamina, jobColor),
-          _buildStatRow("지능", user.mana, jobColor),
-          _buildStatRow("감각", user.agility, jobColor),
+          _buildStatRow("근력", user.strength, jobColor, user.extraStat, (){
+            //미리 업데이트해서 막고
+            userController.updateUser(strength: user.strength + 1 , extraStat:  user.extraStat -1, hp: user.hp + (LevelInfo.base_strength));
+            //파이어베이스 업데이트
+            final Map<String, dynamic> map = {
+              'strength' : user.strength + 1,
+              'extraStat' : user.extraStat -1 ,
+              'hp' : user.hp + (LevelInfo.base_strength)
+            };
+            userController.updateStat(map);
+          }),
+          _buildStatRow("체력", user.health, jobColor, user.extraStat, (){
+            userController.updateUser(health: user.strength + 1 , extraStat:  user.extraStat -1, hp: user.hp + (LevelInfo.base_health));
+            //파이어베이스 업데이트
+            final Map<String, dynamic> map = {
+              'health' : user.strength + 1,
+              'extraStat' : user.extraStat -1 ,
+              'hp' : user.hp + (LevelInfo.base_health)
+            };
+            userController.updateStat(map);
+          }),
+          _buildStatRow("민첩", user.agility, jobColor, user.extraStat, (){
+            userController.updateUser(agility: user.agility + 1 , extraStat:  user.extraStat -1, hp: user.hp + (LevelInfo.base_agility), mp: user.mp + (LevelInfo.base_agility));
+            //파이어베이스 업데이트
+            final Map<String, dynamic> map = {
+              'agility' : user.agility + 1,
+              'extraStat' : user.extraStat - 1 ,
+              'hp' : user.hp + (LevelInfo.base_agility),
+              'mp' : user.mp + (LevelInfo.base_agility)
+            };
+            userController.updateStat(map);
+          }),
+          _buildStatRow("지능", user.mana, jobColor, user.extraStat, (){
+            userController.updateUser(mana: user.mana + 1 , extraStat:  user.extraStat -1, mp: user.mp + (LevelInfo.base_mana));
+            //파이어베이스 업데이트
+            final Map<String, dynamic> map = {
+              'mana' : user.mana + 1,
+              'extraStat' : user.extraStat - 1 ,
+              'mp' : user.mp + (LevelInfo.base_mana)
+            };
+            userController.updateStat(map);
+          }),
+          _buildStatRow("집중", user.stamina, jobColor, user.extraStat, (){
+            userController.updateUser(stamina: user.stamina + 1 , extraStat:  user.extraStat -1, mp: user.mp + (LevelInfo.base_stamina));
+            //파이어베이스 업데이트
+            final Map<String, dynamic> map = {
+              'stamina' : user.mana + 1,
+              'extraStat' : user.extraStat - 1 ,
+              'mp' : user.mp + (LevelInfo.base_stamina)
+            };
+            userController.updateStat(map);
+          }),
         ],
       ),
     );
   }
 
   // 스탯 행 위젯
-  Widget _buildStatRow(String label, int value, Color jobColor) {
+  Widget _buildStatRow(String label, int value, Color jobColor, int visibleUp, VoidCallback callBack) {
     // 스탯 값에 따른 별 개수 (최대 5개)
     final starCount = (value / 20).floor().clamp(0, 5);
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        children: [
-          // 스탯 라벨
-          SizedBox(
-            width: 50,
-            child: Text(
-              "$label:",
-              style: TextStyle(
-                color: Colors.white.withAlpha(200),
-                fontSize: 14,
+    return InkWell(
+      onTap: callBack,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(
+          children: [
+            // 스탯 라벨
+            SizedBox(
+              width: 50,
+              child: Text(
+                "$label:",
+                style: TextStyle(
+                  color: Colors.white.withAlpha(200),
+                  fontSize: 14,
+                ),
               ),
             ),
-          ),
 
-          const SizedBox(width: 10),
+            const SizedBox(width: 10),
 
-          // 스탯 값
-          Container(
-            width: 40,
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-            decoration: BoxDecoration(
-              color: Colors.black.withAlpha(120),
-              borderRadius: BorderRadius.circular(4),
-              border: Border.all(
-                color: jobColor.withAlpha(150),
-                width: 1,
+            // 스탯 값
+            Container(
+              width: 40,
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: Colors.black.withAlpha(120),
+                borderRadius: BorderRadius.circular(4),
+                border: Border.all(
+                  color: jobColor.withAlpha(150),
+                  width: 1,
+                ),
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                value.toString(),
+                style: TextStyle(
+                  color: Colors.white.withAlpha(240),
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
-            alignment: Alignment.center,
-            child: Text(
-              value.toString(),
-              style: TextStyle(
-                color: Colors.white.withAlpha(240),
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
+
+            const SizedBox(width: 12),
+
+            // 스탯 별 표시
+            Expanded(
+              child: Row(
+                children: [
+                  ...List.generate(starCount, (index) => Padding(
+                    padding: const EdgeInsets.only(right: 4),
+                    child: Icon(
+                      BootstrapIcons.star_fill,
+                      color: jobColor.withAlpha(200),
+                      size: 12,
+                    ),
+                  )),
+                  ...List.generate(5 - starCount, (index) => Padding(
+                    padding: const EdgeInsets.only(right: 4),
+                    child: Icon(
+                      BootstrapIcons.star,
+                      color: Colors.white.withAlpha(100),
+                      size: 12,
+                    ),
+                  )),
+                ],
               ),
             ),
-          ),
 
-          const SizedBox(width: 12),
-
-          // 스탯 별 표시
-          Expanded(
-            child: Row(
-              children: [
-                ...List.generate(starCount, (index) => Padding(
-                  padding: const EdgeInsets.only(right: 4),
-                  child: Icon(
-                    BootstrapIcons.star_fill,
-                    color: jobColor.withAlpha(200),
-                    size: 12,
-                  ),
-                )),
-                ...List.generate(5 - starCount, (index) => Padding(
-                  padding: const EdgeInsets.only(right: 4),
-                  child: Icon(
-                    BootstrapIcons.star,
-                    color: Colors.white.withAlpha(100),
-                    size: 12,
-                  ),
-                )),
-              ],
+            // 증가 표시
+            if(visibleUp > 0)
+            Pulse(
+              child: InkWell(
+                onTap: callBack,
+                child: Icon(
+                  BootstrapIcons.arrow_up_circle_fill,
+                  color: jobColor.withAlpha(200),
+                  size: 16,
+                ),
+              ),
             ),
-          ),
-
-          // 증가 표시
-          Icon(
-            BootstrapIcons.arrow_up_circle_fill,
-            color: jobColor.withAlpha(200),
-            size: 16,
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

@@ -9,12 +9,12 @@ class LevelInfo{
     return maxExpPrev + (baseExp + level * factor);
   }
 
-  //감각 / 지능 - mp , 근력 / 체력 - hp , 민첩 - 둘다
-  static int base_health = 8;
-  static int base_strength = 5;
-  static int base_agility = 3;
-  static int base_mana = 8;
-  static int base_stamina = 5;
+  //집중 / 지능 - mp , 근력 / 체력 - hp , 민첩 - 둘다
+  static int base_health = 6; //체력
+  static int base_strength = 6; //근혁
+  static int base_agility = 3; //민첩
+  static int base_mana = 6; //지능
+  static int base_stamina = 6; //집중
 
   static int maxHp(int health,  int strength, int agility){
     final hp = (health * base_health) + (strength * base_strength) + (agility * base_agility);

@@ -1,8 +1,10 @@
 
+import 'package:awaken_quest/utils/dialog/Error_Dialog.dart';
 import 'package:awaken_quest/utils/items/Level_Info.dart';
 import 'package:awaken_quest/utils/manager/Import_Manager.dart';
 import 'package:intl/intl.dart';
 
+import '../../utils/handler/Hive_Handler.dart';
 import '../../utils/manager/Title_Integration.dart';
 
 class QuestController extends GetxController {
@@ -79,7 +81,6 @@ class QuestController extends GetxController {
   }
 
 
-  
   //오늘 퀘스트 할당
   Future<bool> createTodayQuest() async {
     bool creating = false;
@@ -124,6 +125,7 @@ class QuestController extends GetxController {
     return creating;
   }
 
+  //미션 클리어
   Future<void> missionClear(QuestModel item, String type) async {
     try {
       final uid = FirebaseAuth.instance.currentUser?.uid;
@@ -140,6 +142,7 @@ class QuestController extends GetxController {
           .doc(today.value);
 
       final docSnapshot = await docRef.get();
+
       if (!docSnapshot.exists) {
         print("미션 문서가 존재하지 않습니다.");
         return;
@@ -152,6 +155,16 @@ class QuestController extends GetxController {
       final index = missions.indexWhere((mission) => mission['id'] == id);
 
       if (index != -1) {
+
+        //사용자의 수치변경
+        final possible = await calculateUserStat(item);
+
+        if(possible != null){
+          Get.dialog(ErrorDialog(error: possible));
+          return;
+        }
+
+
         missions[index]['isClear'] = Timestamp.now();
 
         await docRef.update({
@@ -176,9 +189,6 @@ class QuestController extends GetxController {
 
 
         // 미션 완료 후 칭호 체크
-        //사용자의 수치변경
-        await calculateUserStat(item);
-
         final userController = Get.find<UserController>();
         await TitleIntegration().integrateWithMissionComplete(
             this,
@@ -209,22 +219,35 @@ class QuestController extends GetxController {
   calculateUserStat(QuestModel item) async {
     final userController = Get.find<UserController>();
     final user = userController.user.value!;
-    final level = user.level;
-    final gained_exp = item.exp;
-    final rand = Random();
+
     final my_mp = user.mp;
     final my_hp = user.hp;
 
-    final hp = JobInfo.plusHp.contains(item.id) ? rand.nextInt(9) + 1 : -(rand.nextInt(14) + 1);
-    final mp = rand.nextDouble() <= 0.2 ? rand.nextInt(9) + 1 : -(rand.nextInt(14)+1);
+    final hp = JobInfo.plusHp.contains(item.id) ? item.hp : -(item.hp);
+    final mp = JobInfo.plusMp.contains(item.id) ? item.mp : -(item.mp);
 
-    final new_hp = my_hp - hp;
-    final new_mp = my_mp - mp;
+    final new_hp = my_hp + hp;
+    final new_mp = my_mp + mp;
+
+    //가능한지 계산
+    if(new_hp < 0 && new_mp > 0){
+      return "미션을 완료하기위한 hp(${new_hp.abs()})가 부족합니다";
+    }else if(new_mp < 0 && new_hp > 0){
+      return "미션을 완료하기위한 mp(${new_mp.abs()})가 부족합니다";
+    }else if(new_mp < 0 && new_hp < 0){
+      return "미션을 완료하기위한 hp(${new_hp.abs()}), mp(${new_mp.abs()})가 부족합니다";
+    }
+
+
+    final level = user.level;
+    final gained_exp = item.exp;
+
 
     final max_exp = LevelInfo.maxExpPrev + (LevelInfo.baseExp + level * LevelInfo.factor);
     final total_exp = user.exp + gained_exp;
 
     if (total_exp >= max_exp) {
+      final extra_stat = user.extraStat + 1;
       final new_exp = total_exp - max_exp;
       final new_level = level + 1;
 
@@ -233,7 +256,8 @@ class QuestController extends GetxController {
         'level': new_level,
         'exp': new_exp,
         'hp' : new_hp,
-        'mp' : new_mp
+        'mp' : new_mp,
+        'extraStat' : extra_stat
       });
 
       // 2. 로컬 모델 업데이트
@@ -241,9 +265,10 @@ class QuestController extends GetxController {
           level: new_level,
           exp: new_exp.toInt(),
           hp: new_hp,
-          mp: new_mp
+          mp: new_mp,
+          extraStat: extra_stat
       );
-      userController.user.refresh(); // GetX에서 Rx 객체 수동 갱신
+
     } else {
       // 1. Firestore 업데이트
       await _firestore.collection('users').doc(_auth.currentUser!.uid).update({
@@ -258,7 +283,6 @@ class QuestController extends GetxController {
           hp: new_hp,
           mp: new_mp
       );
-      userController.user.refresh();
     }
   }
 
@@ -269,5 +293,82 @@ class QuestController extends GetxController {
       'id' : mission.id,
       'isClear' : null,
     };
+  }
+
+
+  //커스텀 만들기
+  Future<void> addCustomMission(String title, int amount, String unit) async {
+    try {
+      // 새 미션 생성
+      final mission = Mission.toMission(
+          title: title,
+          baseAmount: amount,
+          unit: unit
+      );
+
+      // Hive에 저장
+      await HiveHandler.saveCustomMission(mission);
+
+      // 오늘의 미션에 추가
+      final customMission = QuestModel.fromJson({
+        'type': 'custom',
+        'id': mission.id,
+        'isClear': null,
+      });
+
+      todayCustomMissions.add(customMission);
+
+      // Firebase에도 저장
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid != null) {
+        final docRef = _firestore
+            .collection('users')
+            .doc(uid)
+            .collection("missions")
+            .doc(today.value);
+
+        final docSnapshot = await docRef.get();
+        if (docSnapshot.exists) {
+          final data = docSnapshot.data();
+          List<Map<String, dynamic>> customMissions = [];
+
+          if (data != null && data.containsKey('custom')) {
+            customMissions = List<Map<String, dynamic>>.from(data['custom'] ?? []);
+          }
+
+          customMissions.add({
+            'type': 'custom',
+            'id': mission.id,
+            'isClear': null,
+          });
+
+          await docRef.update({
+            'custom': customMissions,
+          });
+        } else {
+          // 오늘 문서가 없는 경우, 먼저 기본 문서 생성 후 다시 시도
+          await createTodayQuest();
+          await addCustomMission(title, amount, unit);
+        }
+      }
+
+      // Get.find로 UserController 찾아서 커스텀 목록 업데이트
+      final userController = Get.find<UserController>();
+      await userController.loadCustomTodoList();
+
+      Get.snackbar(
+        '미션 추가',
+        '새로운 미션이 추가되었습니다',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.green.withValues(alpha: 0.7),
+        colorText: Colors.white,
+        duration: const Duration(seconds: 2),
+        margin: const EdgeInsets.all(16),
+      );
+
+    } catch (e) {
+      print("커스텀 미션 추가 오류: $e");
+      DialogFrame.errorHandler("미션 추가 중 오류가 발생했습니다");
+    }
   }
 }

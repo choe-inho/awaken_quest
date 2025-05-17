@@ -4,7 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:awaken_quest/app/pages/signing/login/Google_Login.dart';
 import 'package:hive/hive.dart';
 import '../../../../utils/manager/Import_Manager.dart';
-import '../../../widgets/Digital_Effect.dart';
+import '../../../widgets/Hunter_Effect_Overlay.dart';
 
 class Login extends StatefulWidget {
   const Login({super.key});

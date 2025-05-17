@@ -1,6 +1,6 @@
 import 'dart:math' as math;
 import '../../../utils/manager/Import_Manager.dart';
-import '../../widgets/Sync_ProgressBar.dart';
+import '../../widgets/Enhanced_Sync_ProgressBar.dart';
 
 class Splash extends StatefulWidget {
   const Splash({super.key});

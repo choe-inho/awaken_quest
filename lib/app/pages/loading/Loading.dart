@@ -1,5 +1,5 @@
 
-import 'package:awaken_quest/app/widgets/Digital_Effect.dart';
+import 'package:awaken_quest/app/widgets/Hunter_Effect_Overlay.dart';
 
 import '../../../utils/manager/Import_Manager.dart';
 

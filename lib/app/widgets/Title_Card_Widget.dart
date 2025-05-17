@@ -50,7 +50,7 @@ class _TitleCardState extends State<TitleCard> with SingleTickerProviderStateMix
 
     // 글로우 애니메이션
     _glowAnimation = Tween<double>(
-      begin: 0.3,
+      begin: 0.3, 
       end: widget.isSelected ? 0.7 : 0.5,
     ).animate(
       CurvedAnimation(
