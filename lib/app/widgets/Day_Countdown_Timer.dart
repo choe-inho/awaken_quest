@@ -1,4 +1,6 @@
 // 실시간 카운트다운 타이머 위젯
+import 'package:awaken_quest/app/controllers/Quest_Controller.dart';
+
 import '../../utils/animation/Simmer_Text.dart';
 import '../../utils/manager/Import_Manager.dart';
 
@@ -31,6 +33,11 @@ class DayCountdownTimerController extends GetxController{
     final difference = tomorrow.difference(now);
 
     remainingSeconds.value = difference.inSeconds;
+
+    //만약 사용중에 날짜가 바뀐다면
+    if(remainingSeconds.value == 0){
+      Get.find<QuestController>().getTodayQuest();
+    }
   }
 }
 

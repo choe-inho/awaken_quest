@@ -81,17 +81,31 @@ class Journal extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             // 이전 날짜 버튼
-            IconButton(
-              onPressed: () {
-                controller.changeDate(
-                  controller.selectedDate.value.subtract(const Duration(days: 1)),
-                );
-              },
-              icon: const Icon(
-                BootstrapIcons.chevron_left,
-                color: Colors.white,
-              ),
-            ),
+            Obx((){
+              final sub_day = controller.selectedDate.value.subtract(const Duration(days: 1));
+              final daysPassed = DateTime.now().difference(sub_day).inDays;
+              final canBack = daysPassed < 60;
+              return IconButton(
+                onPressed: canBack
+                    ? () => controller.changeDate(sub_day)
+                    : () {
+                  // 토스트 메시지나 스낵바로 알림
+                  Get.snackbar(
+                    '알림',
+                    '60일 이전 기록은 조회할 수 없습니다',
+                    snackPosition: SnackPosition.BOTTOM,
+                    backgroundColor: Colors.black.withValues(alpha: 0.7),
+                    colorText: Colors.white,
+                  );
+                },
+                icon: Icon(
+                  BootstrapIcons.chevron_left,
+                  color: canBack
+                      ? Colors.white
+                      : Colors.white.withValues(alpha: 0.4), // 비활성화시 투명도 조절
+                ),
+              );
+            }),
 
             // 날짜 표시
             Obx(() {
@@ -120,19 +134,35 @@ class Journal extends StatelessWidget {
               );
             }),
 
-            // 다음 날짜 버튼
-            IconButton(
-              onPressed: () {
-                final tomorrow = controller.selectedDate.value.add(const Duration(days: 1));
-                if (tomorrow.isBefore(DateTime.now().add(const Duration(days: 1)))) {
-                  controller.changeDate(tomorrow);
-                }
-              },
-              icon: const Icon(
-                BootstrapIcons.chevron_right,
-                color: Colors.white,
-              ),
-            ),
+           Obx((){
+             final tomorrow = controller.selectedDate.value.add(const Duration(days: 1));
+             final today = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
+
+             // 내일이 아닌 오늘까지만 조회 가능 (오늘은 제외)
+             final canFront = tomorrow.isBefore(today);
+
+             return IconButton(
+               onPressed: canFront
+                   ? () => controller.changeDate(tomorrow)
+                   : () {
+                 // 사용자에게 피드백 제공
+                 Get.snackbar(
+                   '알림',
+                   '오늘 날짜는 퀘스트 창에서 확인할 수 있습니다',
+                   snackPosition: SnackPosition.BOTTOM,
+                   backgroundColor: Colors.black.withValues(alpha: 0.7),
+                   colorText: Colors.white,
+                   duration: const Duration(seconds: 2),
+                 );
+               },
+               icon: Icon(
+                 BootstrapIcons.chevron_right,
+                 color: canFront
+                     ? Colors.white
+                     : Colors.white.withValues(alpha: 0.3), // 비활성화시 더 투명하게
+               ),
+             );
+           })
           ],
         ),
       ),

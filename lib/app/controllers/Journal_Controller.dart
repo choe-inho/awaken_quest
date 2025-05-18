@@ -9,7 +9,7 @@ class JournalController extends GetxController {
   final _firestore = FirebaseFirestore.instance;
   final _auth = FirebaseAuth.instance;
   // 선택된 날짜
-  final Rx<DateTime> selectedDate = DateTime.now().obs;
+  final Rx<DateTime> selectedDate = DateTime.now().subtract(const Duration(days: 1)).obs; //하루전을 기본
 
   // 날짜별 미션 기록 데이터
   final RxMap<String, List<QuestModel>> quest = <String, List<QuestModel>>{}.obs;

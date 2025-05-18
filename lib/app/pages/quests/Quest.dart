@@ -1,6 +1,8 @@
 import 'package:awaken_quest/app/controllers/Quest_Controller.dart';
 import 'package:awaken_quest/app/pages/loading/Loading.dart';
 import 'package:intl/intl.dart';
+import '../../../utils/Animation_Utils.dart';
+import '../../../utils/animation/Simmer_Text.dart';
 import '../../../utils/manager/Import_Manager.dart';
 import '../../widgets/Day_Countdown_Timer.dart';
 import '../../widgets/Hunter_Status_Frame.dart'; // 헌터 상태창 import
@@ -176,8 +178,8 @@ class Quest extends GetView<QuestController> {
     return HunterStatusFrame(
       width: Get.width,
       height: customMissions.isEmpty
-          ? 310  // 빈 상태일 때 높이
-          : max(200, 120.0 + customMissions.length * 65.0), // 미션이 있을 때 미션 수에 따라 높이 조정
+          ? 400  // 빈 상태일 때 높이
+          : max(400, 120.0 + customMissions.length * 65.0), // 미션이 있을 때 미션 수에 따라 높이 조정
       primaryColor: const Color(0xFF0055FF),
       secondaryColor: const Color(0xFF00A3FF),
       borderWidth: 2.2,
@@ -211,6 +213,11 @@ class Quest extends GetView<QuestController> {
                   )
             ),
 
+            if(Get.find<UserController>().customTodoList.isNotEmpty)...[
+              const SizedBox(height: 8),
+              //기존 개인 미션 불러오기
+              _buildLoadMyMission(),
+            ],
             const SizedBox(height: 8),
             // 개인 미션 추가 버튼
             _buildAddCustomMissionButton(),
@@ -406,6 +413,260 @@ class Quest extends GetView<QuestController> {
     );
   }
 
+  // 커스텀 미션 기존꺼 불러오기 버튼
+  Widget _buildLoadMyMission() {
+    return ElasticIn(
+      child: InkWell(
+        onTap: () {
+          _showLoadMissionBottomSheet();
+        },
+        splashColor: Colors.transparent,
+        highlightColor: Colors.transparent,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(
+            color: Colors.black.withAlpha(70),
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(
+              // 약간 다른 색상 사용
+              color: const Color(0xFF2979FF).withAlpha(140),
+              width: 1.8,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF2979FF).withAlpha(70),
+                blurRadius: 8,
+                spreadRadius: 0,
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 24,
+                height: 24,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: const Color(0xFF2979FF).withAlpha(50),
+                  border: Border.all(
+                    color: const Color(0xFF2979FF).withAlpha(160),
+                    width: 1.5,
+                  ),
+                ),
+                // 다른 아이콘 사용
+                child: Icon(
+                  BootstrapIcons.folder,
+                  size: 14,
+                  color: Colors.white.withAlpha(240),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                '나만의 미션 불러오기',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white.withAlpha(220),
+                  shadows: [
+                    Shadow(
+                      color: const Color(0xFF2979FF).withAlpha(120),
+                      blurRadius: 10,
+                      offset: const Offset(0, 0),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+
+  // 커스텀 미션 불러오기 바텀시트
+  void _showLoadMissionBottomSheet() {
+    final userController = Get.find<UserController>();
+
+    // 사용자의 커스텀 미션 목록 가져오기
+    final customMissions = userController.customTodoList;
+
+    // 이미 오늘 추가된 미션 ID 목록 (중복 방지용)
+    final alreadyAddedIds = controller.todayCustomMissions
+        .map((mission) => mission.id)
+        .toList();
+
+    Get.bottomSheet(
+      FractionallySizedBox(
+        heightFactor: 0.7, // 화면의 70% 높이
+        child: Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFF050915),
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(20),
+              topRight: Radius.circular(20),
+            ),
+            border: Border.all(
+              color: const Color(0xFF2979FF).withAlpha(120),
+              width: 1.5,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF2979FF).withAlpha(40),
+                blurRadius: 15,
+                spreadRadius: 2,
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              // 드래그 핸들
+              Container(
+                margin: const EdgeInsets.symmetric(vertical: 12),
+                width: 40,
+                height: 5,
+                decoration: BoxDecoration(
+                  color: Colors.white.withAlpha(100),
+                  borderRadius: BorderRadius.circular(5),
+                ),
+              ),
+
+              // 제목
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: ShimmerText(
+                  text: '나만의 미션 목록',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFF2979FF),
+                  ),
+                ),
+              ),
+
+              // 미션이 없는 경우
+              if (customMissions.isEmpty)
+                Expanded(
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          BootstrapIcons.emoji_neutral,
+                          size: 48,
+                          color: Colors.white.withAlpha(120),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          '저장된 미션이 없습니다',
+                          style: TextStyle(
+                            color: Colors.white.withAlpha(160),
+                            fontSize: 16,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '나만의 미션을 추가하면 여기에 표시됩니다',
+                          style: TextStyle(
+                            color: Colors.white.withAlpha(120),
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+              // 미션 목록
+              if (customMissions.isNotEmpty)
+                Expanded(
+                  child: ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: customMissions.length,
+                    itemBuilder: (context, index) {
+                      final mission = customMissions[index];
+                      final isAlreadyAdded = alreadyAddedIds.contains(mission.id);
+
+                      return FadeIn(
+                        delay: Duration(milliseconds: 50 * index),
+                        child: Container(
+                          margin: const EdgeInsets.only(bottom: 10),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withAlpha(60),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: isAlreadyAdded
+                                  ? Colors.grey.withAlpha(70)
+                                  : const Color(0xFF2979FF).withAlpha(100),
+                              width: 1.5,
+                            ),
+                          ),
+                          child: ListTile(
+                            title: Text(
+                              mission.title,
+                              style: TextStyle(
+                                color: isAlreadyAdded
+                                    ? Colors.white.withAlpha(100)
+                                    : Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                decoration: isAlreadyAdded
+                                    ? TextDecoration.lineThrough
+                                    : null,
+                              ),
+                            ),
+                            subtitle: Text(
+                              '${mission.baseAmount} ${mission.unit}',
+                              style: TextStyle(
+                                color: Colors.white.withAlpha(150),
+                                fontSize: 14,
+                              ),
+                            ),
+                            trailing: isAlreadyAdded
+                                ? Icon(
+                              BootstrapIcons.check_circle_fill,
+                              color: Colors.green.withAlpha(150),
+                              size: 22,
+                            )
+                                :  Icon(
+                              BootstrapIcons.plus_circle,
+                              color: const Color(0xFF2979FF).withAlpha(200),
+                              size: 22,
+                            ),
+                            enabled: !isAlreadyAdded,
+                            // 바텀시트 코드 일부 수정
+                            onTap: isAlreadyAdded
+                                ? null
+                                : () {
+                              controller.addMissionToToday(mission.id);
+                              Get.back(); // 바텀시트 닫기
+                            },
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+
+              // 하단 버튼
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: HunterButton(
+                  text: '닫기',
+                  onPressed: () => Get.back(),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      isScrollControlled: true, // 스크롤 가능하도록
+      barrierColor: Colors.black.withAlpha(150), // 반투명 어두운 배경
+      enterBottomSheetDuration: const Duration(milliseconds: 300),
+      exitBottomSheetDuration: const Duration(milliseconds: 200),
+    );
+  }
   // 빈 미션 상태 위젯
   Widget _buildEmptyMissions() {
     return Container(
@@ -873,4 +1134,5 @@ class Quest extends GetView<QuestController> {
       ),
     );
   }
+
 }

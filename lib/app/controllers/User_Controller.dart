@@ -1,4 +1,5 @@
 
+import 'package:awaken_quest/model/Mission_Cleared.dart';
 import 'package:awaken_quest/utils/manager/Import_Manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../model/User_Model.dart';
@@ -13,6 +14,7 @@ class UserController extends GetxController{
   RxInt progress = 0.obs;
   RxBool firebaseConnected = false.obs;
   Rxn<UserModel> user = Rxn<UserModel>();
+  Rxn<MissionCleared> cleared = Rxn<MissionCleared>();
 
   Future<void> userControllerInit() async{
     FirebaseAuth.instance.authStateChanges().listen((User? user) {
@@ -34,6 +36,18 @@ class UserController extends GetxController{
           Get.offAllNamed('/register'); // 다음 페이지 이동
         }else{
           user.value = UserModel.fromMap(doc.data()!);
+
+          //클리어한 미션 들고오가
+          final missionDoc = await _firestore.collection('users').doc(currentUser.uid).collection('cleared').doc('job').get();
+
+          if(!missionDoc.exists){ //존재하지 않는 다면 만들기
+            final map = _createClearedMode();
+            await _firestore.collection('users').doc(currentUser.uid).collection('cleared').doc('job').set(map);
+            cleared.value = MissionCleared.fromJson(map);
+          }else{
+            cleared.value = MissionCleared.fromJson(missionDoc.data()!);
+          }
+
           progress.value += 50;
           firebaseConnected.value = true;
 
@@ -59,6 +73,18 @@ class UserController extends GetxController{
       rethrow;
     }
   }
+
+  //미션 클리어한 갯수 기록 만들기
+  Map<String, dynamic> _createClearedMode(){
+    return {
+      'warrior': 0,
+      'magic': 0,
+      'healer': 0,
+      'smith': 0,
+      'explorer': 0
+    };
+  }
+
 
   //피로도 측정
   final loginKey = "iconoding.awaken.first.loginKey";
@@ -121,15 +147,49 @@ class UserController extends GetxController{
     update();
   }
 
+  Future<void> updateCleared() async {
+    final job = user.value!.job;
+
+    // 현재 직업 필드 가져오기
+    final fieldName = job == '전사' ? 'warrior' : job == '마법사' ? 'magic' : job ==
+        '힐러' ? 'healer' : job == '대장장이' ? 'smith' : job == '탐험가'
+        ? 'explorer'
+        : 'warrior'; // '전사', '마법사', '힐러', '대장장이', '탐험가'
+
+    // 현재 값에 1 증가
+    final currentValue = cleared.value!.toMap()[fieldName] ?? 0;
+    final newValue = currentValue + 1;
+
+    // 로컬 상태 업데이트
+    cleared.value = cleared.value!.copyWith(
+      warrior: job == '전사' ? newValue : null,
+      magic: job == '마법사' ? newValue : null,
+      healer: job == '힐러' ? newValue : null,
+      smith: job == '대장장이' ? newValue : null,
+      explorer: job == '탐험가' ? newValue : null,
+    );
+
+    // Firestore 업데이트
+    await _firestore
+        .collection('users')
+        .doc(_auth.currentUser!.uid)
+        .collection('cleared')
+        .doc('job')
+        .update({fieldName: newValue});
+
+    cleared.refresh();
+    update();
+  }
 
   //커스텀 투두리스트
-  RxList<Mission> customTodoList = <Mission>[].obs;
+  List<Mission> customTodoList = <Mission>[];
 
   // 커스텀 투두리스트 불러오기 메서드 추가
   Future<void> loadCustomTodoList() async {
     try {
       // Hive 박스에서 불러오기
-      customTodoList = HiveHandler.allQuest.obs;
+      customTodoList = HiveHandler.allQuest;
+      update();
     } catch (e) {
       print("커스텀 투두리스트 로딩 오류: $e");
     }

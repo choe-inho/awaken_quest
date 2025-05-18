@@ -38,6 +38,7 @@ class TitleIntegration {
 
   // 미션 완료와 통합
   Future<void> integrateWithMissionComplete(
+      UserController userController,
       QuestController questController,
       String missionType,
       String jobType,
@@ -47,11 +48,11 @@ class TitleIntegration {
       // 일반 미션 완료 칭호 체크
       // 여기서 미션 완료 누적 개수를 가져와야 함
       // 임시로 하드코딩된 값 사용
-      final missionCompleteCount = _getMissionCompletedCount(questController);
+      final missionCompleteCount = _getMissionCompletedCount(userController);
       await _titleHandler.checkAndGrantTitles('mission_complete', missionCompleteCount);
 
       // 직업별 미션 완료 칭호 체크
-      final jobMissionCount = _getJobMissionCompletedCount(questController, jobType);
+      final jobMissionCount = _getJobMissionCompletedCount(userController);
       await _titleHandler.checkAndGrantTitles('job_mission', jobMissionCount, jobType: jobType);
 
       // 시간 기반 미션 체크 (새벽 미션, 밤 미션)
@@ -103,37 +104,39 @@ class TitleIntegration {
     return currentTitle?.hasEffect == true;
   }
 
-  // 로컬 저장소에서 미션 완료 수 계산 (예시)
-  int _getMissionCompletedCount(QuestController questController) {
-    // 실제 구현에서는 Firebase 또는 로컬 DB에서 미션 완료 누적 개수를 가져와야 함
-    // 여기서는 간단한 예시로 현재 완료된 미션 수만 반환
+  // 파이어베이스에 기록된 직업별 완료 계수
+  int _getMissionCompletedCount(UserController controller) {
+    final cleared = controller.cleared.value!;
+
     int count = 0;
 
-    // 메인 미션 중 완료된 것
-    count += questController.todayMainMissions
-        .where((mission) => mission.isClear != null)
-        .length;
-
-    // 서브 미션 중 완료된 것
-    count += questController.todaySubMissions
-        .where((mission) => mission.isClear != null)
-        .length;
-
-    // 커스텀 미션 중 완료된 것
-    count += questController.todayCustomMissions
-        .where((mission) => mission.isClear != null)
-        .length;
+    count += cleared.warrior;
+    count += cleared.magic;
+    count += cleared.healer;
+    count += cleared.smith;
+    count += cleared.explorer;
 
     return count;
   }
 
   // 직업별 미션 완료 수 계산 (예시)
-  int _getJobMissionCompletedCount(QuestController questController, String jobType) {
-    // 실제 구현에서는 Firebase 또는 로컬 DB에서 직업별 미션 완료 누적 개수를 가져와야 함
-    // 간단한 예시로 현재 직업에 맞는 완료된 미션 수만 반환
+  int _getJobMissionCompletedCount(UserController controller) {
+    final job = controller.user.value!.job;
+    final cleared = controller.cleared.value!;
 
-    // 여기서는 모든 미션이 해당 직업의 미션이라고 가정
-    return _getMissionCompletedCount(questController);
+    if(job == '전사'){
+      return cleared.warrior;
+    }else if(job == '마법사'){
+      return cleared.magic;
+    }else if(job == '힐러'){
+      return cleared.healer;
+    }else if(job == '대장장이'){
+      return cleared.smith;
+    }else if(job == '탐험가'){
+      return cleared.explorer;
+    }else{
+      return 0;
+    }
   }
 
   // 하루 동안 모든 미션이 완료되었는지 체크 (예시)

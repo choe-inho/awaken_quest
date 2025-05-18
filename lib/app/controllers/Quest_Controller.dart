@@ -17,7 +17,6 @@ class QuestController extends GetxController {
 
   @override
   void onInit() {
-    today.value = DateFormat('yyyyMMdd').format(DateTime.now().toLocal());
     getTodayQuest();
     super.onInit();
   }
@@ -26,6 +25,13 @@ class QuestController extends GetxController {
 
   Future<void> getTodayQuest() async {
     loading.value = true;
+    //시간 적용을 위한 딜레이
+    await Future.delayed(const Duration(seconds: 1));
+
+    today.value = DateFormat('yyyyMMdd').format(DateTime.now().toLocal());
+    todayMainMissions = <QuestModel>[].obs;
+    todaySubMissions = <QuestModel>[].obs;
+    todayCustomMissions = <QuestModel>[].obs;
 
     try {
       final uid = FirebaseAuth.instance.currentUser?.uid;
@@ -152,6 +158,7 @@ class QuestController extends GetxController {
       final int id = item.id;
 
       final List<dynamic> missions = List.from(data?[type] ?? []);
+      print(data);
       final index = missions.indexWhere((mission) => mission['id'] == id);
 
       if (index != -1) {
@@ -187,10 +194,10 @@ class QuestController extends GetxController {
           todayCustomMissions.addAll(updatedList);
         }
 
-
         // 미션 완료 후 칭호 체크
         final userController = Get.find<UserController>();
         await TitleIntegration().integrateWithMissionComplete(
+            userController,
             this,
             type,
             userController.user.value?.job ?? '전사'
@@ -238,6 +245,8 @@ class QuestController extends GetxController {
       return "미션을 완료하기위한 hp(${new_hp.abs()}), mp(${new_mp.abs()})가 부족합니다";
     }
 
+    //기록 업데이트
+    await userController.updateCleared();
 
     final level = user.level;
     final gained_exp = item.exp;
@@ -245,6 +254,7 @@ class QuestController extends GetxController {
 
     final max_exp = LevelInfo.maxExpPrev + (LevelInfo.baseExp + level * LevelInfo.factor);
     final total_exp = user.exp + gained_exp;
+
 
     if (total_exp >= max_exp) {
       final extra_stat = user.extraStat + 1;
@@ -296,8 +306,8 @@ class QuestController extends GetxController {
   }
 
 
-  //커스텀 만들기
-  Future<void> addCustomMission(String title, int amount, String unit) async {
+  // 새 커스텀 미션 생성 및 저장
+  Future<Mission> createCustomMission(String title, int amount, String unit) async {
     try {
       // 새 미션 생성
       final mission = Mission.toMission(
@@ -309,10 +319,40 @@ class QuestController extends GetxController {
       // Hive에 저장
       await HiveHandler.saveCustomMission(mission);
 
-      // 오늘의 미션에 추가
+      // Get.find로 UserController 찾아서 커스텀 목록 업데이트
+      final userController = Get.find<UserController>();
+      await userController.loadCustomTodoList();
+
+      return mission;
+    } catch (e) {
+      print("커스텀 미션 생성 오류: $e");
+      DialogFrame.errorHandler("미션 생성 중 오류가 발생했습니다");
+      rethrow;
+    }
+  }
+
+// 미션을 오늘의 미션 목록에 추가 (기존 미션 또는 새 미션)
+  Future<void> addMissionToToday(int missionId) async {
+    try {
+      // 이미 추가된 미션인지 확인
+      final alreadyExists = todayCustomMissions.any((m) => m.id == missionId);
+      if (alreadyExists) {
+        Get.snackbar(
+          '알림',
+          '이미 추가된 미션입니다',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.orange.withValues(alpha: 0.7),
+          colorText: Colors.white,
+          duration: const Duration(seconds: 2),
+          margin: const EdgeInsets.all(16),
+        );
+        return;
+      }
+
+      // 오늘의 미션 목록에 추가
       final customMission = QuestModel.fromJson({
-        'type': 'custom',
-        'id': mission.id,
+        'type': 'c',
+        'id': missionId,
         'isClear': null,
       });
 
@@ -337,8 +377,8 @@ class QuestController extends GetxController {
           }
 
           customMissions.add({
-            'type': 'custom',
-            'id': mission.id,
+            'type': 'c',
+            'id': missionId,
             'isClear': null,
           });
 
@@ -348,13 +388,10 @@ class QuestController extends GetxController {
         } else {
           // 오늘 문서가 없는 경우, 먼저 기본 문서 생성 후 다시 시도
           await createTodayQuest();
-          await addCustomMission(title, amount, unit);
+          await addMissionToToday(missionId);
+          return;
         }
       }
-
-      // Get.find로 UserController 찾아서 커스텀 목록 업데이트
-      final userController = Get.find<UserController>();
-      await userController.loadCustomTodoList();
 
       Get.snackbar(
         '미션 추가',
@@ -366,6 +403,20 @@ class QuestController extends GetxController {
         margin: const EdgeInsets.all(16),
       );
 
+    } catch (e) {
+      print("오늘의 미션 추가 오류: $e");
+      DialogFrame.errorHandler("미션 추가 중 오류가 발생했습니다");
+    }
+  }
+
+// 기존 함수 - 새 미션 생성 후 바로 오늘의 미션에 추가
+  Future<void> addCustomMission(String title, int amount, String unit) async {
+    try {
+      // 새 미션 생성 및 저장
+      final mission = await createCustomMission(title, amount, unit);
+
+      // 오늘의 미션에 추가
+      await addMissionToToday(mission.id);
     } catch (e) {
       print("커스텀 미션 추가 오류: $e");
       DialogFrame.errorHandler("미션 추가 중 오류가 발생했습니다");

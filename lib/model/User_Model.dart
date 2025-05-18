@@ -25,6 +25,7 @@ class UserModel {
 
   final DateTime createdAt;
 
+
   const UserModel({
     required this.uid,
     required this.nickname,
