@@ -179,7 +179,7 @@ class Quest extends GetView<QuestController> {
       width: Get.width,
       height: customMissions.isEmpty
           ? 400  // 빈 상태일 때 높이
-          : max(400, 120.0 + customMissions.length * 65.0), // 미션이 있을 때 미션 수에 따라 높이 조정
+          : max(265, 120.0 + customMissions.length * 65.0), // 미션이 있을 때 미션 수에 따라 높이 조정
       primaryColor: const Color(0xFF0055FF),
       secondaryColor: const Color(0xFF00A3FF),
       borderWidth: 2.2,

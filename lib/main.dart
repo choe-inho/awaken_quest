@@ -1,8 +1,9 @@
 import 'package:awaken_quest/utils/App_Theme.dart';
-import 'package:awaken_quest/utils/dialog/Title_Acheivemet_Dialog.dart';
-import 'package:awaken_quest/utils/handler/Title_Handler.dart';
+import 'package:awaken_quest/utils/Notification_Service.dart';
 import 'package:awaken_quest/utils/manager/Import_Manager.dart';
 import 'package:awaken_quest/utils/manager/Title_Integration.dart';
+import 'package:flutter/foundation.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:hive_flutter/adapters.dart';
 import 'app/routes/App_Pages.dart';
 import 'app/routes/App_Routes.dart';
@@ -15,6 +16,19 @@ void main() async{
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  // 알림 시스템 초기화
+  await NotificationService().initialize();
+
+  // AdMob 초기화
+  await MobileAds.instance.initialize();
+
+  // 디버그 환경에서는 테스트 광고 활성화
+  if (kDebugMode) {
+    MobileAds.instance.updateRequestConfiguration(
+      RequestConfiguration(testDeviceIds: ['테스트_기기_ID']),
+    );
+  }
 
   await Hive.initFlutter();
 

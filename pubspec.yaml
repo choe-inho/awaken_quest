@@ -70,6 +70,12 @@ dependencies:
   hive:
   hive_flutter:
 
+  #AD
+  google_mobile_ads:
+
+  # 로컬 알림 - 추가 필요
+  flutter_local_notifications: ^16.3.0
+  timezone: ^0.9.2
 dev_dependencies:
   flutter_test:
     sdk: flutter

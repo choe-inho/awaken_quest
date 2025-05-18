@@ -1,16 +1,19 @@
-// 실시간 카운트다운 타이머 위젯
-import 'package:awaken_quest/app/controllers/Quest_Controller.dart';
+// lib/app/widgets/Day_Countdown_Timer.dart 수정
 
+import 'package:awaken_quest/app/controllers/Quest_Controller.dart';
+import '../../utils/Notification_Service.dart';
 import '../../utils/animation/Simmer_Text.dart';
 import '../../utils/manager/Import_Manager.dart';
 
-class DayCountdownTimerController extends GetxController{
+class DayCountdownTimerController extends GetxController {
   // 남은 시간 (초)을 저장할 변수
   RxInt remainingSeconds = 0.obs;
   Timer? _timer;
+  final NotificationService _notificationService = NotificationService(); // 추가
 
   @override
   void onInit() {
+    _initNotificationService(); // 알림 서비스 초기화
     _calculateRemainingTime();
     // 1초마다 업데이트하는 타이머
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
@@ -19,12 +22,17 @@ class DayCountdownTimerController extends GetxController{
     super.onInit();
   }
 
+  // 알림 서비스 초기화
+  Future<void> _initNotificationService() async {
+    await _notificationService.initialize();
+    await _notificationService.requestPermission();
+  }
+
   @override
   void dispose() {
     _timer?.cancel();
     super.dispose();
   }
-
 
   // 남은 시간 계산
   void _calculateRemainingTime() {
@@ -34,10 +42,20 @@ class DayCountdownTimerController extends GetxController{
 
     remainingSeconds.value = difference.inSeconds;
 
-    //만약 사용중에 날짜가 바뀐다면
-    if(remainingSeconds.value == 0){
+    // 알림 필요 여부 확인 (5시간마다 체크)
+    if (remainingSeconds.value % (5 * 60) == 0) { // 5분마다 체크 (실제로는 더 긴 간격 권장)
+      _checkNotificationNeeded();
+    }
+
+    // 날짜가 바뀌면
+    if (remainingSeconds.value == 0) {
       Get.find<QuestController>().getTodayQuest();
     }
+  }
+
+  // 알림 필요 여부 확인
+  Future<void> _checkNotificationNeeded() async {
+    await _notificationService.scheduleReminderIfNeeded();
   }
 }
 
@@ -62,7 +80,7 @@ class DayCountdownTimer extends GetWidget<DayCountdownTimerController> {
 
         // 카운트다운 텍스트
         Obx(
-            (){
+                () {
               // 시간, 분, 초로 변환
               final hours = controller.remainingSeconds ~/ 3600;
               final minutes = (controller.remainingSeconds % 3600) ~/ 60;
@@ -76,7 +94,7 @@ class DayCountdownTimer extends GetWidget<DayCountdownTimerController> {
                   color: Get.theme.colorScheme.primary,
                 ),
               );
-           }
+            }
         ),
       ],
     );
