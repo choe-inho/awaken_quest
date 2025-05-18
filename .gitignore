@@ -33,6 +33,11 @@ migrate_working_dir/
 .pub/
 /build/
 
+
+#server
+firebase.json
+.env
+
 # Symbolication related
 app.*.symbols
 
